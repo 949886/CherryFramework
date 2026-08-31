@@ -1,0 +1,3 @@
+# Cherry creates/removes .gdignore files dynamically to select the active runtime.
+# Never commit those generated language-selection markers.
+**/.gdignore
