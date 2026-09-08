@@ -1,0 +1,61 @@
+[gd_scene format=3 uid="uid://oinkd1mg8oeq"]
+
+[ext_resource type="Script" uid="uid://cefx4vn3h25rb" path="res://addons/cherry/modules/2d/water/examples/two_pools.gd" id="1"]
+[ext_resource type="Script" uid="uid://crsqn2ja2xfw8" path="res://addons/cherry/modules/2d/water/gdscript/cherry_water_2d.gd" id="2"]
+[ext_resource type="Script" uid="uid://bsa3gcm6h8wk7" path="res://addons/cherry/modules/2d/water/gdscript/cherry_waterfall_2d.gd" id="3"]
+
+[node name="TwoPools" type="Node2D" unique_id=454520216 node_paths=PackedStringArray("pools", "waterfalls")]
+script = ExtResource("1")
+pools = [NodePath("LeftPool"), NodePath("RightPool")]
+waterfalls = [NodePath("Waterfall")]
+
+[node name="Background" type="Polygon2D" parent="." unique_id=2147320424]
+color = Color(0.014, 0.026, 0.05, 1)
+polygon = PackedVector2Array(-2000, -2000, 2000, -2000, 2000, 2000, -2000, 2000)
+
+[node name="PoolBackdrop" type="Polygon2D" parent="." unique_id=1298338902]
+color = Color(0.04, 0.075, 0.11, 1)
+polygon = PackedVector2Array(20, 80, 620, 80, 620, 330, 20, 330)
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1711425052]
+position = Vector2(320, 180)
+
+[node name="LeftPool" type="Node2D" parent="." unique_id=1329672515]
+position = Vector2(35, 145)
+script = ExtResource("2")
+width = 260.0
+depth = 155.0
+bottom_points = PackedVector2Array()
+tint_strength = 0.65
+light_shafts = PackedFloat32Array(80)
+
+[node name="RightPool" type="Node2D" parent="." unique_id=137326531]
+position = Vector2(370, 185)
+rotation = -0.08
+scale = Vector2(1.1, 0.85)
+script = ExtResource("2")
+width = 190.0
+depth = 110.0
+bottom_points = PackedVector2Array()
+random_seed = 9
+shallow_color = Color(0.08, 0.65, 0.38, 1)
+surface_color = Color(0.6, 1, 0.65, 1)
+tint_strength = 0.7
+light_shafts = PackedFloat32Array()
+
+[node name="Waterfall" type="Node2D" parent="." unique_id=345298159]
+position = Vector2(99, 50)
+script = ExtResource("3")
+water_path = NodePath("../LeftPool")
+width = 32.0
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1916182885]
+
+[node name="Instructions" type="Label" parent="UI" unique_id=1844351472]
+offset_left = 25.0
+offset_top = 15.0
+offset_right = 615.0
+offset_bottom = 60.0
+theme_override_font_sizes/font_size = 14
+text = "CHERRY WATER 2D
+Click either pool to splash; Space pauses; R resets."

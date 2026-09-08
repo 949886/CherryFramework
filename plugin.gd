@@ -34,6 +34,7 @@ func _exit_tree() -> void:
 func _register_modules() -> void:
     _register_module(NavigationModule.new())
     _register_module(JoystickModule.new())
+    _register_module(WaterModule.new())
 
 func _register_module(module: PluginModule) -> void:
     module._attach(self, _plugin_root)
@@ -60,3 +61,24 @@ func has_module(module_id: StringName) -> bool:
 ## Returns a copy of the currently registered module list in registration order.
 func get_modules() -> Array[PluginModule]:
     return _modules.duplicate()
+
+func _handles(object: Object) -> bool:
+    return object is CherryWater2D
+
+func _edit(object: Object) -> void:
+    var water_module:=get_module(&"2d.water") as WaterModule
+    if water_module!=null:
+        water_module.edit_water(object)
+
+func _make_visible(visible: bool) -> void:
+    if not visible:
+        _edit(null)
+
+func _forward_canvas_gui_input(event: InputEvent) -> bool:
+    var water_module:=get_module(&"2d.water") as WaterModule
+    return water_module.handle_input(event) if water_module!=null else false
+
+func _forward_canvas_draw_over_viewport(overlay: Control) -> void:
+    var water_module:=get_module(&"2d.water") as WaterModule
+    if water_module!=null:
+        water_module.draw_handles(overlay)
