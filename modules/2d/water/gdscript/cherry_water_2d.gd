@@ -21,7 +21,7 @@ const FIXED_STEP := 1.0 / 60.0
 @export_group("Simulation")
 @export var auto_simulate := true
 @export var simulation_enabled := true
-@export var preview_animation := false
+@export var preview_animation := true
 @export_range(0,.4,.005) var propagation := .20
 @export_range(0,.2,.005) var spring_strength := .025
 @export_range(0,.5,.005) var damping := .065
@@ -70,20 +70,13 @@ var _light_enabled := false
 func _ready() -> void:
     initialize()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
     if _settings_hash()!=_configuration_hash:
         initialize()
-    _sync_shader()
-    if Engine.is_editor_hint():
-        # Editor canvases do not provide the same screen copy as game viewports.
-        # Use an opaque preview so water stays visible on an empty scene.
-        mesh.material=null
-        mesh.color=shallow_color
-        queue_redraw()
-
-func _draw() -> void:
-    if Engine.is_editor_hint() and mesh!=null:
-        draw_polyline(mesh.polygon.slice(0,sample_count),surface_color,surface_thickness)
+    if Engine.is_editor_hint() and preview_animation and simulation_enabled:
+        advance(delta)
+    else:
+        _sync_shader()
 
 ## Resize geometry rather than its Node2D transform; custom basins scale too.
 func resize(new_size: Vector2) -> void:
@@ -103,7 +96,7 @@ func apply_shape(new_size: Vector2, points: PackedVector2Array) -> void:
         initialize()
 
 func _physics_process(delta: float) -> void:
-    if auto_simulate and simulation_enabled and (not Engine.is_editor_hint() or preview_animation):
+    if not Engine.is_editor_hint() and auto_simulate and simulation_enabled:
         advance(delta)
 
 ## Initialize after configuring a new instance. Reconfiguration resets waves.
@@ -283,6 +276,8 @@ func _sync_shader() -> void:
     if mesh==null or not is_inside_tree():
         return
     var forward:=get_global_transform_with_canvas()
+    if Engine.is_editor_hint():
+        forward=EditorInterface.get_editor_viewport_2d().global_canvas_transform*global_transform
     var inverse:=forward.affine_inverse()
     water_material.set_shader_parameter("surface_profile",surface_texture)
     water_material.set_shader_parameter("surface_width",width)

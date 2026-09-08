@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="floating_object.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="Shape"]
+radius = 9.0
+
+[sub_resource type="PhysicsMaterial" id="Material"]
+friction = 0.4
+bounce = 0.25
+
+[node name="FloatingObject" type="RigidBody2D"]
+mass = 0.7
+gravity_scale = 0.5
+physics_material_override = SubResource("Material")
+continuous_cd = 1
+script = ExtResource("1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Shape")
+
+[node name="Body" type="Polygon2D" parent="."]
+color = Color(1, 0.65, 0.2, 1)
+polygon = PackedVector2Array(-9, -4, -4, -9, 4, -9, 9, -4, 9, 4, 4, 9, -4, 9, -9, 4)
+
+[node name="Highlight" type="Polygon2D" parent="."]
+color = Color(1, 0.92, 0.6, 1)
+polygon = PackedVector2Array(-5, -5, 1, -5, 1, -2, -5, -2)

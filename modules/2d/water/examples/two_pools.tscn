@@ -4,10 +4,14 @@
 [ext_resource type="Script" uid="uid://crsqn2ja2xfw8" path="res://addons/cherry/modules/2d/water/gdscript/cherry_water_2d.gd" id="2"]
 [ext_resource type="Script" uid="uid://bsa3gcm6h8wk7" path="res://addons/cherry/modules/2d/water/gdscript/cherry_waterfall_2d.gd" id="3"]
 
-[node name="TwoPools" type="Node2D" unique_id=454520216 node_paths=PackedStringArray("pools", "waterfalls")]
+[ext_resource type="PackedScene" path="floating_object.tscn" id="4"]
+
+[node name="TwoPools" type="Node2D" unique_id=454520216 node_paths=PackedStringArray("pools", "waterfalls", "objects")]
 script = ExtResource("1")
 pools = [NodePath("LeftPool"), NodePath("RightPool")]
 waterfalls = [NodePath("Waterfall")]
+object_scene = ExtResource("4")
+objects = NodePath("Objects")
 
 [node name="Background" type="Polygon2D" parent="." unique_id=2147320424]
 color = Color(0.014, 0.026, 0.05, 1)
@@ -21,6 +25,7 @@ polygon = PackedVector2Array(20, 80, 620, 80, 620, 330, 20, 330)
 position = Vector2(320, 180)
 
 [node name="LeftPool" type="Node2D" parent="." unique_id=1329672515]
+z_index = 2
 position = Vector2(35, 145)
 script = ExtResource("2")
 width = 260.0
@@ -30,6 +35,7 @@ tint_strength = 0.65
 light_shafts = PackedFloat32Array(80)
 
 [node name="RightPool" type="Node2D" parent="." unique_id=137326531]
+z_index = 2
 position = Vector2(370, 185)
 rotation = -0.08
 scale = Vector2(1.1, 0.85)
@@ -44,10 +50,14 @@ tint_strength = 0.7
 light_shafts = PackedFloat32Array()
 
 [node name="Waterfall" type="Node2D" parent="." unique_id=345298159]
+z_index = 3
 position = Vector2(99, 50)
 script = ExtResource("3")
 water_path = NodePath("../LeftPool")
 width = 32.0
+
+[node name="Objects" type="Node2D" parent="."]
+z_index = 1
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1916182885]
 
@@ -58,4 +68,5 @@ offset_right = 615.0
 offset_bottom = 60.0
 theme_override_font_sizes/font_size = 14
 text = "CHERRY WATER 2D
-Click either pool to splash; Space pauses; R resets."
+Click to drop a float; click a float to kick it. Space: pause; R: clear."
+mouse_filter = 2
