@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="StoryCommandRegistry" format=3]
+
+[ext_resource type="Script" path="../gdscript/story_command_registry.gd" id="registry"]
+[ext_resource type="Script" path="../gdscript/story_command_handler.gd" id="handler"]
+[ext_resource type="Script" path="../gdscript/story_builtin_command.gd" id="builtin"]
+
+[sub_resource type="Resource" id="Wait"]
+script = ExtResource("builtin")
+command_name = &"wait"
+method = &"command_wait"
+argument_kind = "duration"
+
+[sub_resource type="Resource" id="Input"]
+script = ExtResource("builtin")
+command_name = &"i"
+method = &"command_input"
+
+[sub_resource type="Resource" id="Save"]
+script = ExtResource("builtin")
+command_name = &"save"
+method = &"command_save"
+
+[sub_resource type="Resource" id="Audio"]
+script = ExtResource("builtin")
+command_name = &"audio"
+method = &"command_audio"
+argument_kind = "asset"
+asset_type = "AudioStream"
+
+[sub_resource type="Resource" id="Background"]
+script = ExtResource("builtin")
+command_name = &"bg"
+method = &"command_background"
+argument_kind = "asset"
+asset_type = "Texture2D"
+
+[sub_resource type="Resource" id="Popup"]
+script = ExtResource("builtin")
+command_name = &"popup"
+method = &"command_popup"
+argument_kind = "asset"
+asset_type = "Texture2D"
+
+[resource]
+script = ExtResource("registry")
+handlers = Array[ExtResource("handler")]([SubResource("Wait"), SubResource("Input"), SubResource("Save"), SubResource("Audio"), SubResource("Background"), SubResource("Popup")])

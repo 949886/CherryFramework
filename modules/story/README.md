@@ -74,6 +74,16 @@ player.restored.connect(func(_quality): print(player.save_manager.restore_qualit
 
 只需要解析和控制流时，可直接调用 `StoryParser.new().compile_file(path, story_id)` 或 `compile_source(text, story_id, source_path)`，再交给 `StoryVM`，无需创建 UI 节点。
 
+## 自定义表现层与命令
+
+`StoryPlayer.presenter` 接受 `StoryPresentation`。可以用普通 Node、世界场景或无 UI 节点实现 `present_dialogue/present_narration/present_choice`；这些方法可以异步等待完成。实现应支持取消、暂停和状态捕获/恢复。`get_presenter_id()` 标识状态所属实现，自定义数据放在 `StoryPresentationState.extensions`；不同表现层的状态会被拒绝。
+
+默认 `StoryPresenter` 的 View Nodes 全部通过导出引用连接，节点改名或改变层级无需修改脚本。`is_configured()` 在播放前检查引用和注册表。
+
+`commands` 指向 `StoryCommandRegistry`，默认资源为 `resources/default_commands.tres`。添加一个继承 `StoryCommandHandler` 的资源，配置 `command_name` 并实现 `execute(presentation, command) -> Error` 即可扩展指令；参数位于 `argument` 与 `attributes`。可用 `validate_argument` 返回诊断，`asset_type` 声明动态资源类型。处理器应无运行时可变状态；执行数据存放在当前表现层或游戏宿主。
+
+`StoryBuiltinCommand` 将可配置名称映射到表现层能力，例如新的 `hold` 指令可映射到 `command_wait`，继续使用统一时钟和存档游标。注册同名命令默认失败，只有显式 `register(handler, true)` 才替换。修改共享默认注册表前先 `duplicate(true)`；未知命令及无效参数会停止当前表现并发出诊断。
+
 ## 剧情语法
 
 完整脚本见 `examples/stories/mahiro.ja.md`。支持：

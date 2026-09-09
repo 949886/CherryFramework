@@ -164,23 +164,23 @@ func _check_player() -> void:
 	var player := demo.get_node("StoryPlayer") as StoryPlayer
 	player.autoplay = false
 	root.add_child(demo)
-	player.presenter.set_process(false)
-	player.presenter.background_fade_duration = 2.0
+	(player.presenter as StoryPresenter).set_process(false)
+	(player.presenter as StoryPresenter).background_fade_duration = 2.0
 	check(player.play("mahiro") == OK, "player prepares stateful story")
 	await process_frame
-	player.presenter.advance_time(0.5)
+	(player.presenter as StoryPresenter).advance_time(0.5)
 	var snapshot := player.create_snapshot()
 	check(snapshot.has("presentation"), "player snapshot includes view state")
 	var file := "user://presentation_%d.json" % OS.get_process_id()
 	player.save_path = file
 	check(player.save_game() == OK, "player writes full save")
-	player.presenter.advance_time(1.0)
+	(player.presenter as StoryPresenter).advance_time(1.0)
 	check(player.load_game() == OK, "player loads full save")
 	await process_frame
-	check(is_equal_approx(player.presenter.background.modulate.a, 0.25), "player restores partial fade through JSON")
+	check(is_equal_approx((player.presenter as StoryPresenter).background.modulate.a, 0.25), "player restores partial fade through JSON")
 	player.pause()
-	player.presenter.advance_time(100.0)
-	check(is_equal_approx(player.presenter.background.modulate.a, 0.25), "player pause controls view clock")
+	(player.presenter as StoryPresenter).advance_time(100.0)
+	check(is_equal_approx((player.presenter as StoryPresenter).background.modulate.a, 0.25), "player pause controls view clock")
 	player.resume()
 	var old_vm := player.vm
 	snapshot.presentation.phase = "invalid"

@@ -123,7 +123,7 @@ func _check_scene(library: StoryLibrary) -> void:
 	var player := demo.get_node("StoryPlayer") as StoryPlayer
 	player.autoplay = false
 	root.add_child(demo)
-	var presenter := player.presenter
+	var presenter := (player.presenter as StoryPresenter)
 	presenter.character_delay = 0.0
 	presenter.background_fade_duration = 0.0
 	check(presenter.characters.size() == 1 and presenter.characters[0].get_state(&"happy").portrait != null, "scene injects character resources")
@@ -164,7 +164,7 @@ func _check_scene(library: StoryLibrary) -> void:
 		if presenter.choices_panel.visible and presenter.choices_panel.get_child_count() > 2:
 			(presenter.choices_panel.get_child(2) as Button).pressed.emit()
 		await process_frame
-	check(not player.is_playing and player.current_story_id == "mahiro_h", "real presenter reaches cross-file END")
+	check(not player.is_playing and player.current_story_id == "mahiro_h", "real presenter reaches cross-file END: %s ip=%s phase=%s processing=%s paused=%s remaining=%s" % [demo.get_node("TopBar/Status").text, player.vm.ip, presenter.capture_state().phase, presenter.is_processing(), presenter.paused, presenter.capture_state().remaining])
 	check(player.vm.program.runtime.get("entered_from_main_route") == true, "destination has independent script variables")
 	check(player.library == library, "library resource is shared without runtime state")
 	demo.queue_free()

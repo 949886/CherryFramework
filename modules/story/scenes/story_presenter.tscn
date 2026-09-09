@@ -27,7 +27,7 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[node name="StoryPresenter" type="Control"]
+[node name="StoryPresenter" type="Control" node_paths=PackedStringArray("background", "portrait", "article_panel", "article_text", "dialogue_panel", "speaker_label", "dialogue_text", "choices_panel", "popup_layer", "popup_texture", "audio_player")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -36,6 +36,17 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_presenter")
 theme = ExtResource("3_theme")
+background = NodePath("Background")
+portrait = NodePath("CharacterLayer/Portrait")
+article_panel = NodePath("ArticlePanel")
+article_text = NodePath("ArticlePanel/Margin/ArticleText")
+dialogue_panel = NodePath("DialoguePanel")
+speaker_label = NodePath("DialoguePanel/Margin/VBox/Speaker")
+dialogue_text = NodePath("DialoguePanel/Margin/VBox/Text")
+choices_panel = NodePath("ChoicesPanel")
+popup_layer = NodePath("PopupLayer")
+popup_texture = NodePath("PopupLayer/Center/PopupTexture")
+audio_player = NodePath("AudioPlayer")
 
 [node name="Background" type="TextureRect" parent="."]
 layout_mode = 1

@@ -3,6 +3,7 @@ extends Resource
 ## Serializable visual context and cursor of one presentation event.
 
 const FIELDS := {
+	"renderer": TYPE_STRING, "extensions": TYPE_DICTIONARY,
 	"mode": TYPE_STRING, "payload": TYPE_DICTIONARY, "phase": TYPE_STRING,
 	"token_index": TYPE_INT, "visible_characters": TYPE_INT,
 	"remaining": TYPE_FLOAT, "text_time": TYPE_FLOAT,
@@ -17,6 +18,8 @@ const PHASES := ["idle", "next", "text", "wait", "input", "end", "choice", "popu
 const MODES := ["idle", "dialogue", "narration", "silent", "choice"]
 
 var mode := "idle"
+var renderer := "default"
+var extensions: Dictionary = {}
 var payload: Dictionary = {}
 var phase := "idle"
 var token_index := 0
@@ -53,6 +56,8 @@ static func from_dict(data: Dictionary) -> StoryPresentationState:
 	var state := StoryPresentationState.new()
 	for key in FIELDS:
 		if not data.has(key):
+			if key in ["renderer", "extensions"]:
+				continue
 			return null
 		var value: Variant = data[key]
 		var expected: int = FIELDS[key]

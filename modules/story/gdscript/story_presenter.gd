@@ -1,9 +1,8 @@
 class_name StoryPresenter
-extends Control
+extends StoryPresentation
 ## Default view with a serializable, frame-driven presentation state machine.
 
 signal event_completed
-signal presentation_failed(message: String)
 
 @export_range(0.0, 1.0, 0.005) var character_delay := 0.035
 @export_range(0.0, 10.0, 0.1) var background_fade_duration := 1.2
@@ -12,29 +11,20 @@ signal presentation_failed(message: String)
 @export var advance_mouse_button: MouseButton = MOUSE_BUTTON_LEFT
 @export var choice_minimum_size := Vector2(0, 54)
 @export var choice_font_size := 22
-@export var auto_play := false
-@export_range(0.0, 10.0, 0.1) var auto_advance_delay := 1.0
-@export var fast_forward := false
-@export_range(1.0, 100.0, 1.0) var fast_forward_multiplier := 10.0
-@export var paused := false:
-	set(value):
-		paused = value
-		if is_node_ready():
-			audio_player.stream_paused = value
+@export var commands: StoryCommandRegistry = preload("../resources/default_commands.tres")
 
-var source_path := ""
-
-@onready var background: TextureRect = $Background
-@onready var portrait: TextureRect = $CharacterLayer/Portrait
-@onready var article_panel: PanelContainer = $ArticlePanel
-@onready var article_text: RichTextLabel = $ArticlePanel/Margin/ArticleText
-@onready var dialogue_panel: PanelContainer = $DialoguePanel
-@onready var speaker_label: Label = $DialoguePanel/Margin/VBox/Speaker
-@onready var dialogue_text: RichTextLabel = $DialoguePanel/Margin/VBox/Text
-@onready var choices_panel: VBoxContainer = $ChoicesPanel
-@onready var popup_layer: ColorRect = $PopupLayer
-@onready var popup_texture: TextureRect = $PopupLayer/Center/PopupTexture
-@onready var audio_player: AudioStreamPlayer = $AudioPlayer
+@export_group("View Nodes")
+@export var background: TextureRect
+@export var portrait: TextureRect
+@export var article_panel: PanelContainer
+@export var article_text: RichTextLabel
+@export var dialogue_panel: PanelContainer
+@export var speaker_label: Label
+@export var dialogue_text: RichTextLabel
+@export var choices_panel: VBoxContainer
+@export var popup_layer: ColorRect
+@export var popup_texture: TextureRect
+@export var audio_player: AudioStreamPlayer
 
 var _host: Object
 var _state := StoryPresentationState.new()
@@ -50,6 +40,19 @@ var _label: RichTextLabel
 func setup(host: Object) -> void:
 	_host = host
 
+func get_presenter_id() -> String:
+	return "default"
+
+func is_configured() -> bool:
+	for node in [background, portrait, article_panel, article_text, dialogue_panel, speaker_label, dialogue_text, choices_panel, popup_layer, popup_texture, audio_player]:
+		if not is_instance_valid(node):
+			return false
+	return commands != null and commands.validate().is_empty()
+
+func _on_pause_changed(value: bool) -> void:
+	if is_instance_valid(audio_player):
+		audio_player.stream_paused = value
+
 func _exit_tree() -> void:
 	cancel_current()
 
@@ -63,7 +66,7 @@ func cancel_current() -> void:
 	_advance_pressed = false
 	_chosen_index = -1
 	_pending_state = null
-	if is_node_ready():
+	if is_configured():
 		audio_player.stop()
 		choices_panel.hide()
 		popup_layer.hide()
@@ -90,6 +93,8 @@ func present_choice(payload: Dictionary) -> int:
 	return _chosen_index if token == _cancel_token else -1
 
 func capture_state() -> StoryPresentationState:
+	if not is_configured():
+		return StoryPresentationState.new()
 	_state.dialogue_text = dialogue_text.text
 	_state.dialogue_characters = maxi(0, dialogue_text.visible_characters)
 	_state.speaker = speaker_label.text
@@ -102,6 +107,8 @@ func capture_state() -> StoryPresentationState:
 	return _state.copy()
 
 func can_restore(state: StoryPresentationState) -> bool:
+	if state.renderer != get_presenter_id():
+		return false
 	for path in [state.background_path, state.portrait_path, state.popup_path]:
 		if not path.is_empty() and (not ResourceLoader.exists(path) or not load(path) is Texture2D):
 			return false
@@ -114,6 +121,9 @@ func restore_state(state: StoryPresentationState, resume_progress: bool) -> void
 	_apply_visuals()
 
 func _begin(mode: String, payload: Dictionary) -> int:
+	if not is_configured():
+		presentation_failed.emit("StoryPresenter requires configured view nodes and a valid command registry.")
+		return -1
 	# Supersede previous awaiters without stopping audio between ordinary lines.
 	_cancel_token += 1
 	_active = false
@@ -248,44 +258,67 @@ func _text_target(index: int) -> int:
 	return target
 
 func _execute_command(command: Dictionary) -> void:
-	var argument := String(command.get("argument", ""))
-	match String(command.get("name", "")):
-		"wait":
-			_state.phase = "wait"
-			_state.remaining = _parse_seconds(argument)
-		"i":
-			_state.phase = "input"
-			_state.remaining = auto_advance_delay
-		"save":
-			if is_instance_valid(_host) and _host.has_method("save_game"):
-				_host.call("save_game", true)
-		"audio":
-			var path := resolve_asset_path(argument)
-			if _asset_exists(path, "AudioStream"):
-				_state.audio_path = path
-				audio_player.stream = load(path) as AudioStream
-				audio_player.play()
-		"bg":
-			var path := resolve_asset_path(argument)
-			if _asset_exists(path, "Texture2D"):
-				_state.background_path = path
-				background.texture = load(path) as Texture2D
-				var fade := String(command.get("attributes", {}).get("transition", "none")) == "fadein"
-				_state.background_alpha = 0.0 if fade and background_fade_duration > 0 else 1.0
-				background.modulate.a = _state.background_alpha
-				if fade:
-					_state.phase = "fade"
-					_state.remaining = background_fade_duration
-		"popup":
-			var path := resolve_asset_path(argument)
-			if _asset_exists(path, "Texture2D"):
-				_state.popup_path = path
-				popup_texture.texture = load(path) as Texture2D
-				popup_layer.show()
-				_state.phase = "popup"
-				_state.remaining = auto_advance_delay
-		_:
-			presentation_failed.emit("Unknown inline command: %s" % command.get("name", ""))
+	var handler := commands.find(StringName(command.get("name", "")))
+	var message := "Unknown inline command: %s" % command.get("name", "")
+	if handler != null:
+		message = handler.validate_argument(command)
+		if message.is_empty():
+			var error := handler.execute(self, command)
+			if error == OK:
+				return
+			message = "Command '%s' failed (error %d)." % [handler.command_name, error]
+	cancel_current()
+	presentation_failed.emit(message)
+
+func command_wait(command: Dictionary) -> Error:
+	_state.phase = "wait"
+	_state.remaining = _parse_seconds(String(command.get("argument", "")))
+	return OK
+
+func command_input(_command: Dictionary) -> Error:
+	_state.phase = "input"
+	_state.remaining = auto_advance_delay
+	return OK
+
+func command_save(_command: Dictionary) -> Error:
+	if is_instance_valid(_host) and _host.has_method("save_game"):
+		var result: Variant = _host.call("save_game", true)
+		return OK if result == null else int(result)
+	return ERR_UNCONFIGURED
+
+func command_audio(command: Dictionary) -> Error:
+	var path := resolve_asset_path(String(command.get("argument", "")))
+	if not _asset_exists(path, "AudioStream"):
+		return ERR_FILE_NOT_FOUND
+	_state.audio_path = path
+	audio_player.stream = load(path) as AudioStream
+	audio_player.play()
+	return OK
+
+func command_background(command: Dictionary) -> Error:
+	var path := resolve_asset_path(String(command.get("argument", "")))
+	if not _asset_exists(path, "Texture2D"):
+		return ERR_FILE_NOT_FOUND
+	_state.background_path = path
+	background.texture = load(path) as Texture2D
+	var fade := String(command.get("attributes", {}).get("transition", "none")) == "fadein"
+	_state.background_alpha = 0.0 if fade and background_fade_duration > 0 else 1.0
+	background.modulate.a = _state.background_alpha
+	if fade:
+		_state.phase = "fade"
+		_state.remaining = background_fade_duration
+	return OK
+
+func command_popup(command: Dictionary) -> Error:
+	var path := resolve_asset_path(String(command.get("argument", "")))
+	if not _asset_exists(path, "Texture2D"):
+		return ERR_FILE_NOT_FOUND
+	_state.popup_path = path
+	popup_texture.texture = load(path) as Texture2D
+	popup_layer.show()
+	_state.phase = "popup"
+	_state.remaining = auto_advance_delay
+	return OK
 
 func _asset_exists(path: String, type: String) -> bool:
 	if ResourceLoader.exists(path, type):

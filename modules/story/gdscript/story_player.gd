@@ -11,7 +11,7 @@ signal saved(automatic: bool)
 signal restored(quality: int)
 
 @export var library: StoryLibrary
-@export var presenter: StoryPresenter
+@export var presenter: StoryPresentation
 @export var initial_story := ""
 @export var locale := ""
 @export var autoplay := true
@@ -47,7 +47,7 @@ func stop() -> void:
 ## Returns after preparing the story; completion is reported by signals.
 ## Preparation is transactional: a failed load leaves current playback intact.
 func play(story_id: String, label: String = "", snapshot: Dictionary = {}, target_locale: String = "") -> Error:
-	if library == null or presenter == null or not is_inside_tree():
+	if library == null or presenter == null or not is_inside_tree() or not presenter.is_configured():
 		return _fail("StoryPlayer requires a library, presenter and scene tree.", ERR_UNCONFIGURED)
 	var next_locale := locale if target_locale.is_empty() else target_locale
 	var program := library.compile_story(story_id, next_locale)
@@ -155,12 +155,18 @@ func _run_story_loop(generation: int) -> void:
 					completed = await presenter.present_dialogue(data)
 				else:
 					completed = await presenter.present_narration(data)
-				if generation != _generation or not completed:
+				if generation != _generation:
+					return
+				if not completed:
+					stop()
 					return
 				vm.advance()
 			StoryProgram.Op.CHO:
 				var index := await presenter.present_choice(data)
-				if generation != _generation or index < 0:
+				if generation != _generation:
+					return
+				if index < 0:
+					stop()
 					return
 				var options: Array = data.get("options", [])
 				if index >= options.size():
