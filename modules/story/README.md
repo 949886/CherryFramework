@@ -91,6 +91,8 @@ player.restored.connect(func(_quality): print(player.save_manager.restore_qualit
 
 存档仍使用原 v2 格式：`story_id`、`locale`、`sid`、`instruction_index`、`op`、`exact_signature`、`variables`。恢复顺序为 SID → 原位置严格匹配 → 附近 ±32 指令严格匹配 → 最近同类型表现指令 → 最近对话。相同距离优先向后，行号只用于诊断。
 
+快照递归复制数组和字典，恢复时先校验所有字段及变量类型，再提交变量与位置变更。v1 SID 存档继续支持；未知版本、错误类型、对象、循环引用、非有限数字及超出 JSON 精确范围的整数会返回错误。迁移搜索按实际剧情长度限制。保存通过同目录临时文件、flush 与重命名替换旧档；失败保留旧档。`max_file_bytes` 默认 16 MiB，可配置。`write_snapshot(path, snapshot)` 可保存宿主扩展的快照。
+
 语言切换使用相同流程；没有共享 SID 时可能采用位置或类型回退，并通过 `restored` 报告实际等级。对示例资源路径的改写会改变涉及这些路径的自动 SID / 严格签名，原 demo 存档可能进入回退；示例使用独立的新存档文件。
 
 读取后从当前句开头重播，不保存打字机内部游标或完整画面状态。仅自动保存顶部普通 `var` 成员，值应为 JSON 可表示数据；函数局部变量不参与存档。`presentation_scene` 与 `metadata` 是角色扩展点，默认表现层只显示 `portrait`。不包含剧情编辑器、编译缓存、rollback 或跨文件调用栈。

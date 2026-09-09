@@ -18,6 +18,11 @@ extends RefCounted
 
 const SAVE_FORMAT_VERSION := 2
 const MAX_EXACT_SEARCH_RANGE := 32
+const MAX_JSON_INTEGER := 9007199254740991
+const MAX_VALUE_DEPTH := 64
+
+var max_file_bytes := 16 * 1024 * 1024
+var _file_sequence := 0
 
 ## Only presentation instructions are safe generic resume points. Internal
 ## control-flow instructions may execute author GDScript and must not be used as
@@ -54,11 +59,16 @@ func create_snapshot(vm: StoryVM, locale: String = "") -> Dictionary:
 	##
 	## The source line is intentionally a debugging hint only. Restoration never
 	## uses Markdown line numbers.
-	if vm == null or vm.program == null:
+	last_file_error = ""
+	if vm == null or vm.program == null or vm.program.runtime == null:
+		last_file_error = "Cannot save an unconfigured StoryVM."
 		return {}
 
 	var instruction := vm.current_instruction()
 	var variables := _capture_script_variables(vm.program)
+	if not _is_json_value(variables):
+		last_file_error = "Story variables must be finite JSON data with string keys, safe integers and no cycles."
+		return {}
 
 	return {
 		"format_version": SAVE_FORMAT_VERSION,
@@ -70,7 +80,7 @@ func create_snapshot(vm: StoryVM, locale: String = "") -> Dictionary:
 		"op": int(instruction.get("op", StoryProgram.Op.END)),
 		"exact_signature": String(instruction.get("exact_signature", "")),
 		"source_line_hint": int(instruction.get("source_line", 0)),
-		"variables": variables,
+		"variables": variables.duplicate(true),
 	}
 
 
@@ -79,17 +89,43 @@ func save_to_file(path: String, vm: StoryVM, locale: String = "") -> Error:
 	last_file_error = ""
 	var snapshot := create_snapshot(vm, locale)
 	if snapshot.is_empty():
-		last_file_error = "Cannot save an unconfigured StoryVM."
-		return ERR_UNCONFIGURED
+		return ERR_INVALID_DATA
+	return write_snapshot(path, snapshot)
 
-	var file := FileAccess.open(path, FileAccess.WRITE)
+
+## Writes beside the destination, flushes, then renames over the old file.
+## A write/rename failure preserves the previous save; no delete-then-write gap.
+func write_snapshot(path: String, snapshot: Dictionary) -> Error:
+	last_file_error = validate_snapshot(snapshot)
+	if not last_file_error.is_empty():
+		return ERR_INVALID_DATA
+	var content := JSON.stringify(snapshot, "  ", true, true)
+	if content.to_utf8_buffer().size() > max_file_bytes:
+		last_file_error = "Save exceeds the configured file size limit."
+		return ERR_OUT_OF_MEMORY
+	var directory := path.get_base_dir()
+	var error := DirAccess.make_dir_recursive_absolute(directory)
+	if error != OK:
+		last_file_error = "Cannot create save directory: %s" % directory
+		return error
+	_file_sequence += 1
+	var temporary := "%s.tmp.%d.%d.%d" % [path, OS.get_process_id(), Time.get_ticks_usec(), _file_sequence]
+
+	var file := FileAccess.open(temporary, FileAccess.WRITE)
 	if file == null:
 		last_file_error = "Could not open save file for writing: %s" % path
 		return FileAccess.get_open_error()
 
-	file.store_string(JSON.stringify(snapshot, "  "))
+	file.store_string(content)
+	file.flush()
+	error = file.get_error()
 	file.close()
-	return OK
+	if error == OK:
+		error = DirAccess.rename_absolute(temporary, path)
+	if error != OK:
+		last_file_error = "Could not replace save file (error %d): %s" % [error, path]
+		DirAccess.remove_absolute(temporary)
+	return error
 
 
 func load_from_file(path: String) -> Dictionary:
@@ -104,16 +140,28 @@ func load_from_file(path: String) -> Dictionary:
 	if file == null:
 		last_file_error = "Could not open save file for reading: %s" % path
 		return {}
+	if file.get_length() > max_file_bytes:
+		file.close()
+		last_file_error = "Save exceeds the configured file size limit."
+		return {}
 
 	var text := file.get_as_text()
 	file.close()
-	var parsed: Variant = JSON.parse_string(text)
-	if not (parsed is Dictionary):
-		last_file_error = "Save JSON is invalid or is not a Dictionary."
+	var json := JSON.new()
+	var parse_error := json.parse(text)
+	if parse_error != OK:
+		last_file_error = "Save JSON line %d: %s" % [json.get_error_line(), json.get_error_message()]
+		return {}
+	var parsed: Variant = json.data
+	if not parsed is Dictionary:
+		last_file_error = "Save JSON must be a dictionary."
 		return {}
 
 	# Keep the typed return explicit for Godot's static GDScript checker.
 	var data: Dictionary = parsed
+	last_file_error = validate_snapshot(data)
+	if not last_file_error.is_empty():
+		return {}
 	return data
 
 
@@ -122,19 +170,24 @@ func restore_snapshot(vm: StoryVM, snapshot: Dictionary) -> Error:
 	##
 	## Position is resolved first. Variables are written only after a valid resume
 	## point is found, so a failed migration cannot partially mutate story state.
-	if vm == null or vm.program == null or vm.program.runtime == null:
-		return ERR_UNCONFIGURED
-
 	_reset_restore_diagnostics()
+	if vm == null or vm.program == null or vm.program.runtime == null:
+		return _restore_failure("StoryVM is not configured.", ERR_UNCONFIGURED)
+	var invalid := validate_snapshot(snapshot)
+	if not invalid.is_empty():
+		return _restore_failure(invalid, ERR_INVALID_DATA)
+	if String(snapshot.story_id) != vm.program.story_id:
+		return _restore_failure("Save belongs to a different story.", ERR_INVALID_DATA)
+	var prepared := _prepare_variables(vm.program, snapshot.get("variables", {}))
+	if not prepared.ok:
+		return _restore_failure(prepared.error, ERR_INVALID_DATA)
 
 	var restored_ip := _resolve_snapshot_position(vm.program, snapshot)
 	if restored_ip < 0:
-		last_restore_quality = RestoreQuality.FAILED
-		last_restore_message = "Could not resolve a safe save position."
-		push_error("Save position could not be restored in story %s." % vm.program.story_id)
-		return ERR_DOES_NOT_EXIST
+		return _restore_failure("Could not resolve a safe save position.", ERR_DOES_NOT_EXIST)
 
-	_restore_script_variables(vm.program, snapshot.get("variables", {}))
+	for key in prepared["values"]:
+		vm.program.runtime.set(key, prepared["values"][key])
 	vm.jump_to_ip(restored_ip)
 	last_restore_to_ip = restored_ip
 	return OK
@@ -168,15 +221,114 @@ func _capture_script_variables(program: StoryProgram) -> Dictionary:
 	return variables
 
 
-func _restore_script_variables(program: StoryProgram, saved_variables: Variant) -> void:
-	if not (saved_variables is Dictionary):
-		return
-
-	var values: Dictionary = saved_variables
+func _prepare_variables(program: StoryProgram, values: Dictionary) -> Dictionary:
+	var properties := {}
+	for property in program.runtime_script.get_script_property_list():
+		properties[String(property.name)] = property
+	var prepared := {}
 	for key in values:
-		var variable_name := StringName(key)
-		if variable_name in program.save_variables:
-			program.runtime.set(variable_name, values[key])
+		if StringName(key) not in program.save_variables:
+			continue # Removed fields are allowed when migrating an old save.
+		var expected_type := int(properties.get(key, {}).get("type", TYPE_NIL))
+		var converted := _convert_value(values[key], expected_type, program.runtime.get(key))
+		if not converted.ok:
+			return {"ok": false, "error": "Save variable '%s' has an incompatible type." % key}
+		prepared[key] = converted.value
+	return {"ok": true, "values": prepared}
+
+
+func _convert_value(value: Variant, expected_type: int, template: Variant = null) -> Dictionary:
+	var value_type := typeof(value)
+	if expected_type == TYPE_NIL:
+		return {"ok": true, "value": value.duplicate(true) if value is Array or value is Dictionary else value}
+	if expected_type == TYPE_INT and _is_integer(value):
+		return {"ok": true, "value": int(value)}
+	if expected_type == TYPE_FLOAT and value_type in [TYPE_INT, TYPE_FLOAT]:
+		return {"ok": true, "value": float(value)}
+	if expected_type != value_type:
+		return {"ok": false}
+	if value is Array:
+		var result: Array = template.duplicate() if template is Array else []
+		result.clear()
+		for item in value:
+			var converted := _convert_value(item, result.get_typed_builtin())
+			if not converted.ok:
+				return {"ok": false}
+			result.append(converted.value)
+		return {"ok": true, "value": result}
+	if value is Dictionary:
+		var result: Dictionary = template.duplicate() if template is Dictionary else {}
+		result.clear()
+		for key in value:
+			var converted_key := _convert_value(key, result.get_typed_key_builtin())
+			var converted_value := _convert_value(value[key], result.get_typed_value_builtin())
+			if not converted_key.ok or not converted_value.ok:
+				return {"ok": false}
+			result[converted_key.value] = converted_value.value
+		return {"ok": true, "value": result}
+	return {"ok": true, "value": value}
+
+
+func _restore_failure(message: String, error: Error) -> Error:
+	last_restore_quality = RestoreQuality.FAILED
+	last_restore_message = message
+	return error
+
+
+func validate_snapshot(snapshot: Dictionary) -> String:
+	if not _is_json_value(snapshot):
+		return "Save contains unsupported JSON values or excessive nesting."
+	var version: Variant = snapshot.get("format_version", 1)
+	if not _is_integer(version) or int(version) not in [1, SAVE_FORMAT_VERSION]:
+		return "Unsupported save format version."
+	if int(version) == SAVE_FORMAT_VERSION:
+		for key in ["instruction_index", "op", "exact_signature", "variables"]:
+			if not snapshot.has(key):
+				return "Save v2 is missing '%s'." % key
+	if not snapshot.get("story_id") is String or String(snapshot.story_id).is_empty():
+		return "Save requires a non-empty story_id."
+	if not snapshot.get("variables", {}) is Dictionary:
+		return "Save variables must be a dictionary."
+	for key in ["locale", "sid", "exact_signature"]:
+		if snapshot.has(key) and not snapshot[key] is String:
+			return "Save field '%s' must be a string." % key
+	for key in ["instruction_index", "op"]:
+		if snapshot.has(key) and (not _is_integer(snapshot[key]) or snapshot[key] < 0):
+			return "Save field '%s' must be a non-negative integer." % key
+	if snapshot.has("op") and snapshot.op >= StoryProgram.Op.size():
+		return "Save opcode is out of range."
+	if String(snapshot.get("sid", "")).is_empty() and not snapshot.has("instruction_index"):
+		return "Save has no position anchor."
+	return ""
+
+
+func _is_integer(value: Variant) -> bool:
+	if value is int:
+		return value >= -MAX_JSON_INTEGER and value <= MAX_JSON_INTEGER
+	return value is float and is_finite(value) and value >= -MAX_JSON_INTEGER and value <= MAX_JSON_INTEGER and floor(value) == value
+
+
+func _is_json_value(value: Variant, depth: int = 0) -> bool:
+	if depth > MAX_VALUE_DEPTH:
+		return false
+	match typeof(value):
+		TYPE_NIL, TYPE_BOOL, TYPE_STRING:
+			return true
+		TYPE_INT:
+			return _is_integer(value)
+		TYPE_FLOAT:
+			return is_finite(value)
+		TYPE_ARRAY:
+			for item in value:
+				if not _is_json_value(item, depth + 1):
+					return false
+			return true
+		TYPE_DICTIONARY:
+			for key in value:
+				if not key is String or not _is_json_value(value[key], depth + 1):
+					return false
+			return true
+	return false
 
 
 func _resolve_snapshot_position(program: StoryProgram, snapshot: Dictionary) -> int:
@@ -279,19 +431,17 @@ func _find_nearest_op(program: StoryProgram, center_ip: int, wanted_op: int) -> 
 		return -1
 
 	var last_ip := program.instructions.size() - 1
-	var max_distance := maxi(abs(center_ip), abs(last_ip - center_ip))
-
-	for distance in range(0, max_distance + 1):
-		var forward := center_ip + distance
-		if _instruction_has_op(program, forward, wanted_op):
-			return forward
-
-		if distance > 0:
-			var backward := center_ip - distance
-			if _instruction_has_op(program, backward, wanted_op):
-				return backward
-
-	return -1
+	var nearest := -1
+	var nearest_distance := MAX_JSON_INTEGER + 1
+	for candidate in range(last_ip + 1):
+		if not _instruction_has_op(program, candidate, wanted_op):
+			continue
+		var distance := absi(candidate - center_ip)
+		# Ascending traversal plus <= preserves the forward tie-break.
+		if distance <= nearest_distance:
+			nearest = candidate
+			nearest_distance = distance
+	return nearest
 
 
 func _instruction_has_op(program: StoryProgram, candidate_ip: int, wanted_op: int) -> bool:
