@@ -8,10 +8,12 @@ const EditorScreen = preload("editor/story_editor.gd")
 const Inspector = preload("editor/story_inspector_plugin.gd")
 const Exporter = preload("editor/story_export_plugin.gd")
 const LegacyImports = preload("editor/legacy_story_imports.gd")
+const ProjectFiles = preload("editor/story_project_files.gd")
 
 var _panel: Control
 var _inspector: EditorInspectorPlugin
 var _exporter: EditorExportPlugin
+var _source_refresh_queued := false
 
 func on_plugin_enter_tree() -> void:
 	_refresh_sources.call_deferred(LegacyImports.migrate())
@@ -25,8 +27,15 @@ func on_plugin_enter_tree() -> void:
 	plugin.add_inspector_plugin(_inspector)
 	_exporter = Exporter.new()
 	plugin.add_export_plugin(_exporter)
+	var filesystem := EditorInterface.get_resource_filesystem()
+	filesystem.filesystem_changed.connect(_queue_source_refresh)
+	filesystem.script_classes_updated.connect(_queue_source_refresh)
+	_queue_source_refresh()
 
 func on_plugin_exit_tree() -> void:
+	var filesystem := EditorInterface.get_resource_filesystem()
+	filesystem.filesystem_changed.disconnect(_queue_source_refresh)
+	filesystem.script_classes_updated.disconnect(_queue_source_refresh)
 	plugin.remove_tool_menu_item("Cherry: Check Stories")
 	plugin.remove_inspector_plugin(_inspector)
 	plugin.remove_export_plugin(_exporter)
@@ -35,6 +44,28 @@ func on_plugin_exit_tree() -> void:
 	_panel = null
 	_inspector = null
 	_exporter = null
+	_source_refresh_queued = false
+
+func _queue_source_refresh() -> void:
+	if _source_refresh_queued or _panel == null:
+		return
+	_source_refresh_queued = true
+	_refresh_source_types.call_deferred()
+
+func _refresh_source_types() -> void:
+	_source_refresh_queued = false
+	if _panel == null:
+		return
+	var filesystem := EditorInterface.get_resource_filesystem()
+	if filesystem.is_scanning():
+		return
+	# Files scanned before the custom loader was registered can retain TextFile
+	# metadata indefinitely. Refresh the index, without touching open text buffers.
+	for path in ProjectFiles.source_paths():
+		if filesystem.get_file_type(path) != "TextFile" or FileAccess.file_exists(path + ".import"):
+			continue
+		if ResourceLoader.exists(path, "MarkdownStory"):
+			filesystem.update_file(path)
 
 func _refresh_sources(paths: PackedStringArray) -> void:
 	if _panel == null:
