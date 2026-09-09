@@ -1,6 +1,7 @@
 @tool
 extends SyntaxHighlighter
 ## Story structure is highlighted here; GDScript tokens use Godot's own lexer.
+const Palette = preload("story_syntax_palette.gd")
 
 const THEME_ROLES := {
 	"text": "text_color",
@@ -15,6 +16,7 @@ const THEME_ROLES := {
 }
 
 var _palette: Dictionary = {}
+var _native_colors: Dictionary = {}
 var _lines: Array[Dictionary] = []
 var _blocks: Array[String] = []
 var _active_block := -1
@@ -23,6 +25,13 @@ var _gdscript := GDScriptSyntaxHighlighter.new()
 
 func _init() -> void:
 	_code_buffer.syntax_highlighter = _gdscript
+	Palette.THEME.changed.connect(_palette_changed)
+
+func _palette_changed() -> void:
+	update_cache()
+	var editor := get_text_edit()
+	if is_instance_valid(editor):
+		editor.queue_redraw()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
@@ -36,9 +45,9 @@ func _update_cache() -> void:
 	# Our fence/comment state must also be invalidated after insertions and undo.
 	if not editor.lines_edited_from.is_connected(_source_changed):
 		editor.lines_edited_from.connect(_source_changed)
-	var settings := EditorInterface.get_editor_settings()
 	for role in THEME_ROLES:
-		_palette[role] = settings.get_setting("text_editor/theme/highlighting/" + THEME_ROLES[role])
+		_palette[role] = Palette.get_color(THEME_ROLES[role])
+	_native_colors = Palette.native_color_map()
 	_code_buffer.add_theme_color_override("font_color", _palette.text)
 	_gdscript.update_cache()
 
@@ -133,7 +142,11 @@ func _code_colors(info: Dictionary) -> Dictionary:
 		_code_buffer.clear_undo_history()
 		# Reset even for identical blocks: unfinished strings must not cross fences.
 		_gdscript.clear_highlighting_cache()
-	return _gdscript.get_line_syntax_highlighting(int(info.row))
+	var result := _gdscript.get_line_syntax_highlighting(int(info.row)).duplicate(true)
+	for column in result:
+		var original: Color = result[column].color
+		result[column].color = _native_colors.get(original, original)
+	return result
 
 func _highlight_prose(text: String, colors: PackedColorArray, comments: Array) -> void:
 	var stripped := text.strip_edges(true, false)
