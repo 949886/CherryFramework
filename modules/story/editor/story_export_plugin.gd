@@ -38,7 +38,7 @@ func _include_resource(path: String) -> void:
 		get_export_platform().add_message(EditorExportPlatform.EXPORT_MESSAGE_ERROR, "Cherry Story", "Dependency must be inside res://: " + path)
 		return
 	var import_path := path + ".import"
-	if FileAccess.file_exists(import_path):
+	if not MarkdownStory.supports_path(path) and FileAccess.file_exists(import_path):
 		var config := ConfigFile.new()
 		if config.load(import_path) != OK:
 			return

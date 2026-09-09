@@ -1,19 +1,30 @@
 # Cherry Story
 
-Godot 4 的 Markdown 剧情模块。入口是一个 `Story` 资源；当前实现为 `MarkdownStory`，启用 Cherry 后可以直接把 `.md` 文件拖到 `StoryPlayer.story`。标准版与 .NET 版共用 GDScript 实现，不需要 Autoload。
+Godot 4 的 Markdown 剧情模块。入口是一个 `Story` 资源；当前实现为 `MarkdownStory`，Godot 扫描脚本类后可以直接把 `.md` 文件拖到 `StoryPlayer.story`。标准版与 .NET 版共用 GDScript 实现，不需要 Autoload。
 
 ## 开始使用
 
-1. 在「项目 → 项目设置 → 插件」启用 Cherry。升级已启用的插件后，禁用再启用一次，让新 Markdown 导入器注册并完成扫描。
+1. 在「项目 → 项目设置 → 插件」启用 Cherry。本次从导入器升级为原生资源格式，保存工作后重启一次 Godot，让原生格式加载器注册并重新扫描文件。
 2. 打开 `examples/story_demo.tscn`，按 F6 体验。示例直接引用 `examples/stories/mahiro.ja.md`。
 3. 自建场景时，实例化 `scenes/story_presenter.tscn`，添加挂载 `StoryPlayer` 脚本的 Node，在 Inspector 中连接 `presenter`，把入口 `.md` 拖到 `story`，然后保存场景。
 4. 设置 `locale` 与 `save_path`。`autoplay` 默认开启；`locale` 留空时使用 `TranslationServer.get_locale()`。
 
-如果现有 Markdown 仍显示为普通文本，重新启用 Cherry 后，在 Import 面板选择 **Story (Markdown)** 并重新导入。导入仅生成指向源文件的 Resource，不会编译或执行剧情代码。普通文档也可以被识别为 Markdown 资源，但项目剧情检查只从场景/资源引用的入口开始。
+`.md` / `.story` 通过 `MarkdownStoryFormatLoader` 原生加载为 `MarkdownStory`，使用 Godot 默认的资源选择器，不需要自定义拖放控件或先创建包装资源。场景保存外部引用：
+
+```ini
+[ext_resource type="Resource" path="res://stories/intro.story" id="1_story"]
+
+[node name="StoryPlayer" type="Node"]
+story = ExtResource("1_story")
+```
+
+文件原文保存在 `.md` / `.story` 中，`.tscn` 保存引用。加载器报告原生类型 `Resource` 和脚本类型 `MarkdownStory`；Godot 在编辑器和导出后的游戏中自动注册此全局加载器。无需 Markdown 导入步骤或 `.import` 中间资源；`.uid` 用于稳定标识文件，建议提交到版本管理。`README.md`（不区分大小写）不会被此加载器识别为故事。
+
+升级时 Cherry 会备份并移除默认配置的旧 `cherry.story.markdown` 导入记录，将原 UID 保留到 `.uid`；备份位于项目编辑器数据目录的 `story_legacy_imports`。带有自定义命令/额外文件的旧导入设置会保留并提示先迁移到 `MarkdownStory.tres`。
 
 ## 文件命名与多语言
 
-同时支持 `.md` 和 `.story`，两者使用相同的 Markdown 剧情语法，都会导入为 `MarkdownStory`。下文 `.md` 入口的操作也适用于 `.story`。升级后重新启用 Cherry，让导入器注册新增扩展名。
+同时支持 `.md` 和 `.story`，两者使用相同的 Markdown 剧情语法，都会加载为 `MarkdownStory`。下文 `.md` 入口的操作也适用于 `.story`。首次添加加载器后重启 Godot，使其识别原生资源格式。
 
 例如 `intro.ja.story`、`intro.zh-cn.story`、`intro.story` 均可直接拖到 `StoryPlayer.story`。跳转可以写 `>>[继续](chapter2.story#开场)`，也可以在 `.md` 与 `.story` 之间跳转。同目录同 ID 的翻译允许混用扩展名；同一语言若两种文件都存在，优先使用当前入口的扩展名，建议每种语言只维护一份。
 
@@ -37,7 +48,7 @@ stories/
 3. 无语言后缀：`intro.md`。
 4. 当前入口文件自身的语言版本，例如入口是 `intro.ja.md` 时回退到它。
 
-新增或删除同目录翻译会在下次查询/播放时反映；编辑器需要完成新增文件的导入。`player.get_available_locales()` 返回当前故事检测到的语言列表，示例据此生成语言切换按钮。
+新增或删除同目录翻译会在下次查询/播放时反映；编辑器需要完成新增文件的扫描。`player.get_available_locales()` 返回当前故事检测到的语言列表，示例据此生成语言切换按钮。
 
 ## Story 资源与播放器
 
@@ -49,10 +60,11 @@ stories/
 | `StoryParser` / `StoryProgram` / `StoryVM` | 编译为七条 IR 指令并执行控制流 |
 | `StorySaveManager` | JSON 快照、类型校验、原子保存与位置恢复 |
 | `StoryPresentation` / `StoryPresenter` | 表现层契约与默认 UI |
-| `StoryValidator` / `editor/` | Markdown 导入、入口检查、源行预览及导出依赖 |
+| `MarkdownStoryFormatLoader` | 文件类型、脚本资源类型、原生加载及运行时依赖 |
+| `StoryValidator` / `editor/` | 入口检查、源行预览及导出依赖 |
 | `resources/runtime_dependencies.tres` | 供选定场景导出使用的运行时脚本清单 |
 
-正常使用只需要一个 `.md` 入口。也可以通过 `MarkdownStory.from_file("res://stories/intro.md")` 构造资源，或创建一个 `MarkdownStory.tres` 并设置 `source_file`；后者适合需要在 Resource 上独立配置命令和额外文件的情况。新增其他剧情格式时继承 `Story` 并实现其接口，播放器不依赖 Markdown 类型。
+正常使用只需要一个 `.md` 入口。代码中使用 `load("res://stories/intro.md") as Story` 可获得同样的外部资源。`MarkdownStory.from_file()` 是直接构造包装对象的底层工厂；也可以创建一个 `MarkdownStory.tres` 并设置 `source_file`；后者适合需要在 Resource 上独立配置命令和额外文件的情况。新增其他剧情格式时继承 `Story` 并实现其接口，播放器不依赖 Markdown 类型。
 
 ```gdscript
 @onready var player: StoryPlayer = $StoryPlayer
@@ -120,7 +132,7 @@ player.set_fast_forward(true)
 
 默认表现层的 `characters` 数组配置角色资源；角色 `display_name` 匹配说话人，`states` 配置表情立绘。View Nodes 均为导出引用，调整节点层级后重新连接即可。主题中使用 CJK 系统字体，可按发行平台替换为随包字体。
 
-`Story.commands` 指向 `StoryCommandRegistry`，默认使用 `resources/default_commands.tres`。对于导入的 `.md`，在 **Import → Commands** 中指定自定义注册表资源路径并重新导入；留空使用默认值。检查器与播放器使用相同注册表。翻译共用入口的配置，跨文件跳转使用目标入口资源的配置。
+`Story.commands` 指向 `StoryCommandRegistry`，默认使用 `resources/default_commands.tres`。直接加载的故事文件使用默认注册表；自定义配置时创建一个 `MarkdownStory.tres`，设置 `source_file` 和 `commands`，然后将该 `.tres` 作为入口。检查器与播放器使用相同注册表。翻译共用入口的配置，跨文件跳转使用目标入口资源的配置。
 
 添加 `StoryBuiltinCommand` 可把新名字映射到现有表现能力，例如 `hold` → `command_wait`；新能力继承 `StoryCommandHandler`，用 `@tool` 实现 `validate_argument()` 和 `execute()`。完全替换表现层时继承 `StoryPresentation`，实现显示、取消、暂停和状态捕获/恢复接口。
 
@@ -136,14 +148,14 @@ print(player.program_cache.compilations)
 
 ## 编辑器与导出
 
-- 选中导入后的 `.md` 或 `MarkdownStory.tres`，Inspector 中点击 **Check Story**，检查入口、同目录翻译及可达的跨文件跳转。
+- 选中 `.md`、`.story` 或 `MarkdownStory.tres`，Inspector 中点击 **Check Story**，检查入口、同目录翻译及可达的跨文件跳转。
 - **项目 → 工具 → Cherry: Check Stories**，或底部 Story 面板的 **Check project stories**，检查已保存场景/资源引用的入口。仅创建但尚未引用的 `.md` 可以单独检查。
 - 检查涵盖语法、命令参数、素材存在性/类型、跳转和翻译显式 SID。点击诊断可预览源文件并定位到对应行；右侧为只读预览。
 - 项目无入口和检查通过都会显示说明，不再保留空白结果区域。
 
 启用 Cherry 后正常导出即可。导出插件沿入口跟随跨文件跳转，收集同目录翻译、Markdown 原文及素材导入数据。选定场景/资源模式只处理被选中的入口；不会验证无关 README 或未选中的故事。原始 Markdown 也保留在包中，使运行时可继续按文件名发现语言版本。
 
-作者代码计算出的资源路径需要在入口 `.md` 的 **Import → Extra Files** 配置，或在手动创建的 Story 资源上配置 `extra_files`。相对路径以入口源文件目录为基准。导出会报告缺失文件及与排除过滤器冲突的依赖；Godot 报错时仍可能写出 PCK，发布前应确保零错误。
+作者代码计算出的资源路径需要在手动创建的 `MarkdownStory.tres` 入口上配置 `extra_files`。相对路径以入口源文件目录为基准。导出会报告缺失文件及与排除过滤器冲突的依赖；Godot 报错时仍可能写出 PCK，发布前应确保零错误。
 
 `StoryPlayer.runtime_dependencies` 自动保存运行时清单引用，保留选定场景导出需要的全局脚本类。新建或迁移后的场景保存一次即可；新增模块运行时类时同步更新清单。
 
@@ -152,3 +164,5 @@ print(player.program_cache.compilations)
 原剧情库资源已移除。将播放器的 `library` 和 `initial_story` 配置改为单个 `story` 资源引用；示例已迁移。`play("剧情ID")` 改为 `play()` 或 `play(Story资源)`。语言列表改用 `player.get_available_locales()`，缓存配置改到播放器；路径和语言字典不再需要。
 
 本次迁移在隔离项目中验证了 38 项新入口行为、32 项存档检查及 31 项表现层回归，以及真实 Markdown 导入、编辑器检查和独立 PCK 播放。PCK 在空目录运行中文入口，并自动跳转到中文后续剧情。验证使用 Godot 4.7.2 .NET、Windows Desktop 与兼容渲染器；临时验证文件留在宿主 `.godot` 下。
+
+原生格式迁移验证包含 Godot 默认资源槽的拖放与撤销/重做、外部引用序列化、场景重载、无编辑器的运行及独立 PCK 播放。

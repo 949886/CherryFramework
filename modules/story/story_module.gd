@@ -7,16 +7,14 @@ const MODULE_ID := &"story"
 const CheckPanel = preload("editor/story_check_panel.gd")
 const Inspector = preload("editor/story_inspector_plugin.gd")
 const Exporter = preload("editor/story_export_plugin.gd")
-const Importer = preload("editor/markdown_story_import_plugin.gd")
+const LegacyImports = preload("editor/legacy_story_imports.gd")
 
 var _panel: Control
 var _inspector: EditorInspectorPlugin
 var _exporter: EditorExportPlugin
-var _importer: EditorImportPlugin
 
 func on_plugin_enter_tree() -> void:
-	_importer = Importer.new()
-	plugin.add_import_plugin(_importer)
+	_refresh_sources.call_deferred(LegacyImports.migrate())
 	_panel = CheckPanel.new()
 	plugin.add_control_to_bottom_panel(_panel, "Story")
 	plugin.add_tool_menu_item("Cherry: Check Stories", _check_all)
@@ -28,7 +26,6 @@ func on_plugin_enter_tree() -> void:
 
 func on_plugin_exit_tree() -> void:
 	plugin.remove_tool_menu_item("Cherry: Check Stories")
-	plugin.remove_import_plugin(_importer)
 	plugin.remove_inspector_plugin(_inspector)
 	plugin.remove_export_plugin(_exporter)
 	plugin.remove_control_from_bottom_panel(_panel)
@@ -36,7 +33,12 @@ func on_plugin_exit_tree() -> void:
 	_panel = null
 	_inspector = null
 	_exporter = null
-	_importer = null
+
+func _refresh_sources(paths: PackedStringArray) -> void:
+	if _panel == null:
+		return
+	for path in paths:
+		EditorInterface.get_resource_filesystem().update_file(path)
 
 func _check_all() -> void:
 	_panel.check_all()

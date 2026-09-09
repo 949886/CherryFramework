@@ -8,7 +8,7 @@ const SUPPORTED_EXTENSIONS := ["md", "story"]
 @export_file("*.md", "*.story") var source_file := ""
 
 static func supports_path(path: String) -> bool:
-	return path.get_extension().to_lower() in SUPPORTED_EXTENSIONS
+	return path.get_extension().to_lower() in SUPPORTED_EXTENSIONS and path.get_file().to_lower() != "readme.md"
 
 static func from_file(path: String) -> MarkdownStory:
 	if not supports_path(path) or not FileAccess.file_exists(path):
@@ -76,12 +76,12 @@ func resolve_story(target: String) -> Story:
 	if not FileAccess.file_exists(path):
 		var preferred := String(describe_path(source_file).locale)
 		candidate.source_file = sources.get("", sources.get(preferred, sources.values()[0]))
-	# Imported resources carry optional per-file import settings.
+	# Use native loading so the returned resource retains its external file path.
 	if ResourceLoader.exists(candidate.source_file):
 		var imported := load(candidate.source_file) as MarkdownStory
 		if imported != null:
 			return imported
-	# Raw-file use also works without the editor importer.
+	# Direct construction remains available when no format loader is registered.
 	candidate.commands = commands
 	return candidate
 
