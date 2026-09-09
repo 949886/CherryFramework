@@ -2,6 +2,7 @@
 extends VBoxContainer
 ## Each open story owns a native CodeEdit and its undo history.
 const ProjectFiles = preload("story_project_files.gd")
+const StoryHighlighter = preload("story_syntax_highlighter.gd")
 var files := ItemList.new()
 var filter := LineEdit.new()
 var title := Label.new()
@@ -88,10 +89,13 @@ func _init() -> void:
 
 func _ready() -> void:
 	EditorInterface.get_resource_filesystem().filesystem_changed.connect(refresh_files)
+	EditorInterface.get_editor_settings().settings_changed.connect(_refresh_editor_theme)
 	refresh_files()
 	_restore_recovery()
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_THEME_CHANGED and is_node_ready():
+		_refresh_editor_theme.call_deferred()
 	if what == NOTIFICATION_APPLICATION_FOCUS_IN and is_node_ready():
 		refresh_files()
 		for path in documents:
@@ -158,20 +162,8 @@ func _create_document(path: String, text: String) -> void:
 	editor.minimap_draw = true
 	editor.highlight_current_line = true
 	editor.auto_brace_completion_enabled = true
-	var settings := EditorInterface.get_editor_settings()
-	var theme := EditorInterface.get_editor_theme()
-	editor.add_theme_font_override("font", theme.get_font("source", "EditorFonts"))
-	if settings.has_setting("interface/editor/code_font_size"):
-		editor.add_theme_font_size_override("font_size", roundi(float(settings.get_setting("interface/editor/code_font_size")) * EditorInterface.get_editor_scale()))
-	var highlighter := CodeHighlighter.new()
-	highlighter.symbol_color = settings.get_setting("text_editor/theme/highlighting/symbol_color")
-	highlighter.number_color = settings.get_setting("text_editor/theme/highlighting/number_color")
-	highlighter.function_color = settings.get_setting("text_editor/theme/highlighting/function_color")
-	highlighter.member_variable_color = settings.get_setting("text_editor/theme/highlighting/member_variable_color")
-	highlighter.add_color_region("<!--", "-->", settings.get_setting("text_editor/theme/highlighting/comment_color"))
-	highlighter.add_color_region("`", "`", settings.get_setting("text_editor/theme/highlighting/string_color"))
-	highlighter.add_color_region("[", "]", settings.get_setting("text_editor/theme/highlighting/symbol_color"))
-	editor.syntax_highlighter = highlighter
+	_apply_editor_theme(editor)
+	editor.syntax_highlighter = StoryHighlighter.new()
 	editor.text = text
 	editor.clear_undo_history()
 	editor.hide()
@@ -182,6 +174,22 @@ func _create_document(path: String, text: String) -> void:
 		_recovery_timer.start())
 	editor.caret_changed.connect(_update_position)
 	editor.gui_input.connect(_editor_input)
+
+func _apply_editor_theme(editor: CodeEdit) -> void:
+	var settings := EditorInterface.get_editor_settings()
+	var theme := EditorInterface.get_editor_theme()
+	editor.add_theme_font_override("font", theme.get_font("source", "EditorFonts"))
+	if settings.has_setting("interface/editor/code_font_size"):
+		editor.add_theme_font_size_override("font_size", roundi(float(settings.get_setting("interface/editor/code_font_size")) * EditorInterface.get_editor_scale()))
+	for color in ["font_color", "background_color", "current_line_color", "selection_color", "caret_color", "line_number_color"]:
+		var setting: String = "text_color" if color == "font_color" else color
+		editor.add_theme_color_override(color, settings.get_setting("text_editor/theme/highlighting/" + setting))
+	if editor.syntax_highlighter != null:
+		editor.syntax_highlighter.update_cache()
+
+func _refresh_editor_theme() -> void:
+	for document in documents.values():
+		_apply_editor_theme(document.editor)
 
 func active_editor() -> CodeEdit:
 	return documents[current_path].editor if documents.has(current_path) else null
