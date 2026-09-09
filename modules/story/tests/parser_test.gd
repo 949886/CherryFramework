@@ -41,8 +41,7 @@ func _initialize() -> void:
 	check(lines == ["Inner", "After"], "nested branches consume all trailing content")
 	var dotted := parser.compile_source(">>[next](chapter.one.md#scene.2)", "start")
 	check(dotted.instructions[0].data == {"story": "chapter.one", "label": "scene.2"}, "dotted logical ID and cross-file heading")
-	parser.story_aliases = {"res://stories/chapter.one.zh-cn.md": "chapter.one"}
 	var localized := parser.compile_source(">>[next](chapter.one.zh-cn.md)", "start", "res://stories/start.md")
-	check(localized.instructions[0].data.story == "chapter.one", "localized file resolves only by explicit library mapping")
+	check(localized.instructions[0].data.story == "chapter.one", "localized file automatically resolves logical ID")
 	print("Parser: %d passed, %d failed" % [checks - failures, failures])
 	quit(0 if failures == 0 else 1)

@@ -166,7 +166,7 @@ func _check_player() -> void:
 	root.add_child(demo)
 	(player.presenter as StoryPresenter).set_process(false)
 	(player.presenter as StoryPresenter).background_fade_duration = 2.0
-	check(player.play("mahiro") == OK, "player prepares stateful story")
+	check(player.play(null) == OK, "player prepares stateful story")
 	await process_frame
 	(player.presenter as StoryPresenter).advance_time(0.5)
 	var snapshot := player.create_snapshot()
@@ -184,7 +184,7 @@ func _check_player() -> void:
 	player.resume()
 	var old_vm := player.vm
 	snapshot.presentation.phase = "invalid"
-	check(player.play("mahiro", "", snapshot) != OK and player.vm == old_vm, "bad view state leaves active story intact")
+	check(player.play(null, "", snapshot) != OK and player.vm == old_vm, "bad view state leaves active story intact")
 	DirAccess.remove_absolute(file)
 	demo.queue_free()
 	await process_frame

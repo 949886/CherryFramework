@@ -171,6 +171,12 @@ print(player.program_cache.compilations)
 
 原剧情库资源已移除。将播放器的 `library` 和 `initial_story` 配置改为单个 `story` 资源引用；示例已迁移。`play("剧情ID")` 改为 `play()` 或 `play(Story资源)`。语言列表改用 `player.get_available_locales()`，缓存配置改到播放器；路径和语言字典不再需要。
 
-本次迁移在隔离项目中验证了 38 项新入口行为、32 项存档检查及 31 项表现层回归，以及真实 Markdown 导入、编辑器检查和独立 PCK 播放。PCK 在空目录运行中文入口，并自动跳转到中文后续剧情。验证使用 Godot 4.7.2 .NET、Windows Desktop 与兼容渲染器；临时验证文件留在宿主 `.godot` 下。
+## 自动回归测试
 
-原生格式迁移验证包含 Godot 默认资源槽的拖放与撤销/重做、外部引用序列化、场景重载、无编辑器的运行及独立 PCK 播放。
+现有测试已迁移到 `Story / MarkdownStory` 接口，覆盖运行时、自动多语言、原生资源复制与场景保存、编辑器、高亮和配色、旧文件图标修复，以及选定场景导出后的独立 PCK 播放。
+
+```powershell
+python addons/cherry/modules/story/tests/run_tests.py --godot "C:/path/to/godot_console.exe"
+```
+
+默认完整运行；测试在系统临时目录创建隔离且迁移安装位置的工程，保留日志与 `report.json`，不使用宿主 `.godot`。详细命令、覆盖范围与结果判定见 [tests/README.md](tests/README.md)。

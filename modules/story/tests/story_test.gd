@@ -15,18 +15,14 @@ func check(condition: bool, message: String) -> void:
 		printerr("FAIL: " + message)
 
 func _run() -> void:
-	var module := StoryModule.new()
-	module._attach(null, module_root.get_base_dir().get_base_dir())
-	check(module.get_module_id() == &"story", "stable Cherry module ID")
-	check(module.get_runtime_root() == module_root.path_join("gdscript"), "runtime path follows installation")
-	check(module.get_example_scene_path() == module_root.path_join("examples/story_demo.tscn"), "example path follows installation")
-	var library := load(module_root.path_join("examples/story_library.tres")) as StoryLibrary
-	check(library != null, "example library loads")
-	check(library.resolve_path("mahiro", "missing") == library.resolve_path("mahiro", "ja"), "configured locale fallback")
-	check(library.resolve_path("unknown", "ja").is_empty(), "unknown story cannot resolve")
-	for story_id in library.stories:
-		for locale in library.stories[story_id]:
-			var program := library.compile_story(story_id, locale)
+	var entry := load(module_root.path_join("examples/stories/mahiro.ja.md")) as Story
+	check(entry != null, "native Markdown entry loads")
+	check(entry.get_source_path("missing") == entry.get_source_path("ja"), "entry language fallback")
+	check(entry.resolve_story("unknown") == null, "unknown story cannot resolve")
+	for story_id in ["mahiro", "mahiro_h"]:
+		var variant := entry.resolve_story(story_id)
+		for locale in variant.get_available_locales():
+			var program := variant.compile(locale)
 			check(program != null, "compile %s.%s" % [story_id, locale])
 			_check_assets(program)
 	for locale in ["ja", "zh-cn"]:
@@ -38,9 +34,9 @@ func _run() -> void:
 			{"tire": 50, "favor": 95, "choice": 2, "count": 3, "next": "mahiro_h", "result": 95},
 			{"tire": 90, "favor": 70, "choice": 0, "count": 1, "next": "", "result": 70},
 		]:
-			_check_route(library, locale, scenario)
+			_check_route(entry, locale, scenario)
 	_check_parser_and_save()
-	await _check_scene(library)
+	await _check_scene(entry)
 	print("Story checks: %d passed, %d failed" % [checks - failures.size(), failures.size()])
 	quit(0 if failures.is_empty() else 1)
 
@@ -55,9 +51,9 @@ func _check_assets(program: StoryProgram) -> void:
 				check(ResourceLoader.exists(presenter.resolve_asset_path(token.argument)), "relative inline asset: " + token.argument)
 	presenter.free()
 
-func _check_route(library: StoryLibrary, locale: String, scenario: Dictionary) -> void:
+func _check_route(entry: Story, locale: String, scenario: Dictionary) -> void:
 	var vm := StoryVM.new()
-	vm.setup(library.compile_story("mahiro", locale))
+	vm.setup(entry.compile(locale))
 	vm.program.runtime.set("tire", scenario.tire)
 	vm.program.runtime.set("mahiro_favorability", scenario.favor)
 	var finished := false
@@ -117,7 +113,7 @@ func _check_parser_and_save() -> void:
 	var tabs := parser.compile_source(branches.replace("    ", "\t"), "indent")
 	check(spaces.instructions == tabs.instructions, "tab/space lowering agrees including heading jump")
 
-func _check_scene(library: StoryLibrary) -> void:
+func _check_scene(entry: Story) -> void:
 	var scene := load(module_root.path_join("examples/story_demo.tscn")) as PackedScene
 	var demo := scene.instantiate()
 	var player := demo.get_node("StoryPlayer") as StoryPlayer
@@ -127,7 +123,7 @@ func _check_scene(library: StoryLibrary) -> void:
 	presenter.character_delay = 0.0
 	presenter.background_fade_duration = 0.0
 	check(presenter.characters.size() == 1 and presenter.characters[0].get_state(&"happy").portrait != null, "scene injects character resources")
-	check(player.play("mahiro") == OK, "player starts example")
+	check(player.play(null) == OK, "player starts example")
 	await process_frame
 	# Jump directly to the dialogue for migration, avoiding the demo's timed intro.
 	var first_dialogue := -1
@@ -137,12 +133,14 @@ func _check_scene(library: StoryLibrary) -> void:
 			break
 	player.vm.jump_to_ip(first_dialogue)
 	var snapshot := player.save_manager.create_snapshot(player.vm, "ja")
-	check(player.play("mahiro", "", snapshot) == OK, "replace active presentation")
+	check(player.play(null, "", snapshot) == OK, "replace active presentation")
 	await process_frame
 	check(player.switch_locale("zh-cn") == OK and player.locale == "zh-cn", "locale switches active playback")
 	await process_frame
 	var old_vm := player.vm
-	check(player.play("unknown") != OK and player.vm == old_vm and player.is_playing, "failed replacement preserves active story")
+	var missing := MarkdownStory.new()
+	missing.source_file = module_root.path_join("examples/stories/missing.md")
+	check(player.play(missing) != OK and player.vm == old_vm and player.is_playing, "failed replacement preserves active story")
 	player.stop()
 	await process_frame
 	# Replace a pending choice twice in the same frame; the old coroutine must
@@ -156,7 +154,7 @@ func _check_scene(library: StoryLibrary) -> void:
 	presenter.cancel_current()
 	await process_frame
 	# End-to-end playback through actual UI and cross-file JMP, driven by input.
-	check(player.play("mahiro", "", snapshot, "ja") == OK, "restart UI route")
+	check(player.play(null, "", snapshot, "ja") == OK, "restart UI route")
 	player.vm.program.runtime.set("mahiro_favorability", 95)
 	var deadline := Time.get_ticks_msec() + 10000
 	while player.is_playing and Time.get_ticks_msec() < deadline:
@@ -166,6 +164,15 @@ func _check_scene(library: StoryLibrary) -> void:
 		await process_frame
 	check(not player.is_playing and player.current_story_id == "mahiro_h", "real presenter reaches cross-file END: %s ip=%s phase=%s processing=%s paused=%s remaining=%s" % [demo.get_node("TopBar/Status").text, player.vm.ip, presenter.capture_state().phase, presenter.is_processing(), presenter.paused, presenter.capture_state().remaining])
 	check(player.vm.program.runtime.get("entered_from_main_route") == true, "destination has independent script variables")
-	check(player.library == library, "library resource is shared without runtime state")
+	check(player.story == entry, "entry resource is shared without runtime state")
+	# A save made in a destination file must restore that file from the main entry.
+	player.vm.jump_to_ip(0)
+	var destination_snapshot := player.create_snapshot()
+	player.save_path = "user://cross_file_save.json"
+	check(player.save_manager.write_snapshot(player.save_path, destination_snapshot) == OK, "cross-file snapshot writes to disk")
+	check(player.play(null, "", snapshot, "zh-cn") == OK, "switch back to entry before loading destination save")
+	check(player.load_game() == OK and player.current_story_id == "mahiro_h" and player.locale == "ja", "loading restores destination source and saved language")
+	player.stop()
+	DirAccess.remove_absolute(player.save_path)
 	demo.queue_free()
 	await process_frame

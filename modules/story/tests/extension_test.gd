@@ -78,10 +78,10 @@ func _run() -> void:
 	root.add_child(recorder)
 	var player := StoryPlayer.new()
 	player.autoplay = false
-	player.library = load(module_root.path_join("examples/story_library.tres"))
+	player.story = load(module_root.path_join("examples/stories/mahiro.ja.md"))
 	player.presenter = recorder
 	root.add_child(player)
-	check(player.play("mahiro", "", {}, "ja") == OK, "player accepts non-Control renderer")
+	check(player.play(null, "", {}, "ja") == OK, "player accepts non-Control renderer")
 	await process_frame
 	check(not player.is_playing and recorder.lines.size() > 1, "headless renderer completes branching story")
 	var state := recorder.capture_state()
