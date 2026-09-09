@@ -20,7 +20,7 @@ func clear() -> void:
 func size() -> int:
 	return _templates.size()
 
-func compile_file(path: String, story_id: String, aliases: Dictionary = {}, enabled: bool = true, report_errors: bool = true) -> StoryProgram:
+func compile_file(path: String, story_id: String, enabled: bool = true, report_errors: bool = true) -> StoryProgram:
 	diagnostics.clear()
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
@@ -28,7 +28,7 @@ func compile_file(path: String, story_id: String, aliases: Dictionary = {}, enab
 		return null
 	var source := file.get_as_text()
 	file.close()
-	var key := JSON.stringify([compiler_version, story_id, path, source.sha256_text(), JSON.stringify(aliases)]).sha256_text()
+	var key := JSON.stringify([compiler_version, story_id, path, source.sha256_text()]).sha256_text()
 	_trim_to_capacity()
 	if enabled and capacity > 0 and _templates.has(key):
 		hits += 1
@@ -37,7 +37,6 @@ func compile_file(path: String, story_id: String, aliases: Dictionary = {}, enab
 		return (_templates[key] as StoryProgram).instantiate_program()
 	misses += 1
 	var parser := StoryParser.new()
-	parser.story_aliases = aliases
 	parser.report_errors = report_errors
 	compilations += 1
 	var template := parser.compile_source(source, story_id, path, false)

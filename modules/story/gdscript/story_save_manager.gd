@@ -289,7 +289,7 @@ func validate_snapshot(snapshot: Dictionary) -> String:
 		return "Save requires a non-empty story_id."
 	if not snapshot.get("variables", {}) is Dictionary:
 		return "Save variables must be a dictionary."
-	for key in ["locale", "sid", "exact_signature"]:
+	for key in ["locale", "sid", "exact_signature", "story_source"]:
 		if snapshot.has(key) and not snapshot[key] is String:
 			return "Save field '%s' must be a string." % key
 	for key in ["instruction_index", "op"]:

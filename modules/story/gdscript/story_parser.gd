@@ -40,15 +40,12 @@ var _pending_sid: String = ""
 var _errors: Array[String] = []
 var _current_source_line: int = 0
 
-## Absolute localized file path -> logical story ID, supplied by StoryLibrary.
-## No locale suffix is guessed: dots are legal parts of a story ID.
-var story_aliases: Dictionary = {}
 var report_errors := true
 var diagnostics: Array[Dictionary] = []
 
 const STORY_TAB_WIDTH := 4
 ## Bump when lowering, generated code or program metadata semantics change.
-const COMPILER_VERSION := "2"
+const COMPILER_VERSION := "3"
 
 
 func compile_file(path: String, story_id: String) -> StoryProgram:
@@ -645,8 +642,9 @@ func _parse_sid_comment(text: String) -> String:
 
 
 func _story_id_from_filename(filename: String) -> String:
-	var path := filename if filename.is_absolute_path() else _program.source_path.get_base_dir().path_join(filename).simplify_path()
-	return String(story_aliases.get(path, filename.trim_suffix(".md").trim_prefix("./")))
+	var id := String(MarkdownStory.describe_path(filename).id)
+	var directory := filename.get_base_dir()
+	return directory.path_join(id).trim_prefix("./") if not directory.is_empty() else id
 
 
 func _story_indent_columns(text: String) -> int:

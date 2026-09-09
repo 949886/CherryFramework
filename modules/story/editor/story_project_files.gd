@@ -1,28 +1,35 @@
 @tool
 extends RefCounted
-## Discover libraries and walk resource dependencies without creating scenes.
+## Discover referenced Story resources; documentation Markdown is not an entry.
 
-static func libraries() -> Array[StoryLibrary]:
-	var result: Array[StoryLibrary] = []
-	_scan("res://", result)
+static func stories(roots: PackedStringArray = []) -> Array[Story]:
+	var sources := roots.duplicate()
+	if sources.is_empty():
+		_collect_roots("res://", sources)
+	var result: Array[Story] = []
+	for path in dependency_closure(sources):
+		var extension := String(path).get_extension().to_lower()
+		var candidate := extension == "md"
+		if extension == "tres":
+			candidate = FileAccess.get_file_as_string(path).contains('script_class="MarkdownStory"')
+		elif extension == "res":
+			candidate = true
+		if not candidate:
+			continue
+		var story := load(path) as Story
+		if story != null:
+			result.append(story)
 	return result
 
-static func _scan(directory: String, result: Array[StoryLibrary]) -> void:
+static func _collect_roots(directory: String, roots: PackedStringArray) -> void:
 	if FileAccess.file_exists(directory.path_join(".gdignore")):
 		return
 	for file in DirAccess.get_files_at(directory):
-		if file.get_extension() not in ["tres", "res"]:
-			continue
-		var path := directory.path_join(file)
-		# Avoid loading every unrelated .tres (and any tool scripts it uses).
-		if file.get_extension() == "tres" and not FileAccess.get_file_as_string(path).contains('script_class="StoryLibrary"'):
-			continue
-		var resource := load(path)
-		if resource is StoryLibrary:
-			result.append(resource)
+		if file.get_extension() in ["tres", "res", "tscn", "scn"]:
+			roots.append(directory.path_join(file))
 	for child in DirAccess.get_directories_at(directory):
 		if not child.begins_with("."):
-			_scan(directory.path_join(child), result)
+			_collect_roots(directory.path_join(child), roots)
 
 static func dependency_closure(roots: PackedStringArray) -> Dictionary:
 	var result := {}

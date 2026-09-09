@@ -16,13 +16,13 @@ func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String,
 	for setting in ProjectSettings.get_property_list():
 		if String(setting.name).begins_with("autoload/"):
 			roots.append(String(ProjectSettings.get_setting(setting.name)).trim_prefix("*"))
-	var selected := ProjectFiles.dependency_closure(roots)
-	for library in ProjectFiles.libraries():
-		if _excluded(library.resource_path):
+	var selected_only := preset.get_export_filter() in [EditorExportPreset.EXPORT_SELECTED_SCENES, EditorExportPreset.EXPORT_SELECTED_RESOURCES]
+	if selected_only and roots.is_empty():
+		return
+	for story in ProjectFiles.stories(roots if selected_only else PackedStringArray()):
+		if _excluded(story.resource_path):
 			continue
-		if preset.get_export_filter() in [EditorExportPreset.EXPORT_SELECTED_SCENES, EditorExportPreset.EXPORT_SELECTED_RESOURCES] and not selected.has(library.resource_path):
-			continue
-		var report := StoryLibraryValidator.new().validate(library)
+		var report := StoryValidator.new().validate(story)
 		for diagnostic in report.diagnostics:
 			var severity := EditorExportPlatform.EXPORT_MESSAGE_ERROR if diagnostic.severity == "error" else EditorExportPlatform.EXPORT_MESSAGE_WARNING
 			get_export_platform().add_message(severity, "Cherry Story", "%s:%d: %s" % [diagnostic.path, diagnostic.line, diagnostic.message])
@@ -70,6 +70,9 @@ func _excluded(path: String) -> bool:
 	return false
 
 func _export_file(path: String, _type: String, _features: PackedStringArray) -> void:
+	# Keep source text even when Godot exports an imported .md resource directly.
+	if path.get_extension().to_lower() == "md" and not _injected.has(path):
+		_include_resource(path)
 	if _injected.has(path):
 		skip()
 

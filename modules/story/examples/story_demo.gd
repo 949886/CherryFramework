@@ -29,7 +29,7 @@ func _ready() -> void:
 	_update_locale_button()
 
 func _next_locale() -> String:
-	var locales := player.library.locale_labels.keys()
+	var locales := player.get_available_locales()
 	if locales.is_empty():
 		return player.locale
 	return String(locales[(locales.find(player.locale) + 1) % locales.size()])
@@ -39,7 +39,8 @@ func _toggle_locale() -> void:
 
 func _update_locale_button() -> void:
 	var next := _next_locale()
-	locale_button.text = String(player.library.locale_labels.get(next, next))
+	locale_button.text = TranslationServer.get_locale_name(next.replace("-", "_")) if not next.is_empty() else "Default"
+	locale_button.disabled = player.get_available_locales().size() < 2
 
 func _debug_set(action: Dictionary) -> void:
 	if player.vm.program == null:

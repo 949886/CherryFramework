@@ -6,7 +6,8 @@
 [ext_resource type="Script" path="../gdscript/story_command_handler.gd" id="4"]
 [ext_resource type="Script" path="../gdscript/story_command_registry.gd" id="5"]
 [ext_resource type="Script" path="../gdscript/story_inline_parser.gd" id="6"]
-[ext_resource type="Script" path="../gdscript/story_library.gd" id="7"]
+[ext_resource type="Script" path="../gdscript/story.gd" id="7"]
+[ext_resource type="Script" path="../gdscript/markdown_story.gd" id="16"]
 [ext_resource type="Script" path="../gdscript/story_parser.gd" id="8"]
 [ext_resource type="Script" path="../gdscript/story_presentation.gd" id="9"]
 [ext_resource type="Script" path="../gdscript/story_presentation_state.gd" id="10"]
@@ -18,5 +19,5 @@
 [ext_resource type="Resource" path="default_commands.tres" id="commands"]
 
 [resource]
-metadata/scripts = [ExtResource("1"), ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15")]
+metadata/scripts = [ExtResource("1"), ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15"), ExtResource("16")]
 metadata/commands = ExtResource("commands")
