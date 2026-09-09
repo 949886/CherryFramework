@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#53647d"/><stop offset="1" stop-color="#253044"/></linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffd59a"/><stop offset="1" stop-color="#ef8f87"/></linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#wall)"/>
+  <rect x="105" y="70" width="500" height="310" rx="10" fill="#1a2230" stroke="#d6e0ed" stroke-width="12"/>
+  <rect x="125" y="90" width="460" height="270" fill="url(#sun)"/>
+  <circle cx="480" cy="165" r="56" fill="#fff1bb" opacity=".9"/>
+  <path d="M125 300 C230 220 340 330 585 205 L585 360 L125 360Z" fill="#6a7291" opacity=".75"/>
+  <rect x="0" y="520" width="1280" height="200" fill="#4a342e"/>
+  <rect x="730" y="250" width="420" height="250" rx="18" fill="#8b5d53"/>
+  <rect x="760" y="285" width="360" height="175" rx="12" fill="#d7a79a"/>
+  <rect x="820" y="455" width="35" height="130" fill="#33252a"/>
+  <rect x="1030" y="455" width="35" height="130" fill="#33252a"/>
+  <rect x="100" y="470" width="480" height="32" rx="12" fill="#aa8061"/>
+  <rect x="145" y="500" width="35" height="145" fill="#503c36"/>
+  <rect x="500" y="500" width="35" height="145" fill="#503c36"/>
+  <text x="640" y="660" text-anchor="middle" fill="#ffffff" opacity=".32" font-size="24" font-family="sans-serif">DEMO BACKGROUND · evening room</text>
+</svg>

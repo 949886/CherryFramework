@@ -1,0 +1,13 @@
+[gd_resource type="Theme" format=3]
+
+[sub_resource type="SystemFont" id="Regular"]
+font_names = PackedStringArray("Noto Sans CJK SC", "Microsoft YaHei", "Noto Sans CJK JP", "Yu Gothic", "sans-serif")
+
+[sub_resource type="SystemFont" id="Bold"]
+font_names = PackedStringArray("Noto Sans CJK SC", "Microsoft YaHei", "Noto Sans CJK JP", "Yu Gothic", "sans-serif")
+font_weight = 700
+
+[resource]
+default_font = SubResource("Regular")
+RichTextLabel/fonts/normal_font = SubResource("Regular")
+RichTextLabel/fonts/bold_font = SubResource("Bold")

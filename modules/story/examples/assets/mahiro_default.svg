@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="760" viewBox="0 0 520 760">
+  <ellipse cx="260" cy="710" rx="190" ry="28" fill="#000" opacity=".25"/>
+  <path d="M135 680 Q165 390 260 360 Q355 390 390 680Z" fill="#f2e8ec" stroke="#a88ca4" stroke-width="8"/>
+  <path d="M175 390 Q105 250 160 125 Q210 30 300 70 Q405 85 390 235 Q370 360 320 415Z" fill="#9d6f9f"/>
+  <ellipse cx="265" cy="235" rx="105" ry="125" fill="#f8d8ca"/>
+  <path d="M165 205 Q175 85 285 90 Q390 100 380 245 Q340 170 305 138 Q235 205 165 205Z" fill="#9d6f9f"/>
+  <ellipse cx="225" cy="245" rx="12" ry="17" fill="#513b58"/>
+  <ellipse cx="305" cy="245" rx="12" ry="17" fill="#513b58"/>
+  <path d="M235 300 Q265 315 295 300" fill="none" stroke="#b56e78" stroke-width="6" stroke-linecap="round"/>
+  <path d="M180 425 Q260 470 340 425" fill="none" stroke="#ffffff" stroke-width="22"/>
+  <text x="260" y="735" text-anchor="middle" fill="#fff" font-size="24" font-family="sans-serif">真尋 · default</text>
+</svg>

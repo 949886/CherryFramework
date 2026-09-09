@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="560" viewBox="0 0 800 560">
+  <rect width="800" height="560" rx="36" fill="#f4efe7"/>
+  <ellipse cx="400" cy="320" rx="305" ry="150" fill="#d8e4ec" stroke="#8ea5b5" stroke-width="12"/>
+  <path d="M205 335 Q255 180 425 190 Q610 205 625 340 Q525 410 250 390Z" fill="#f5c94f" stroke="#c9912a" stroke-width="8"/>
+  <path d="M325 286 C355 245 400 270 400 310 C400 270 445 245 475 286 C500 325 455 360 400 395 C345 360 300 325 325 286Z" fill="none" stroke="#d84c49" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="180" cy="220" r="32" fill="#6cac66"/>
+  <circle cx="620" cy="220" r="32" fill="#6cac66"/>
+  <text x="400" y="90" text-anchor="middle" fill="#825f52" font-size="36" font-family="sans-serif" font-weight="bold">ハート付きオムライス</text>
+  <text x="400" y="510" text-anchor="middle" fill="#77665d" font-size="22" font-family="sans-serif">点击 / F 关闭 popup</text>
+</svg>

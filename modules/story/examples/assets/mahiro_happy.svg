@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="760" viewBox="0 0 520 760">
+  <ellipse cx="260" cy="710" rx="190" ry="28" fill="#000" opacity=".25"/>
+  <path d="M135 680 Q165 390 260 360 Q355 390 390 680Z" fill="#fff0f5" stroke="#b77aaa" stroke-width="8"/>
+  <path d="M175 390 Q105 250 160 125 Q210 30 300 70 Q405 85 390 235 Q370 360 320 415Z" fill="#a968ad"/>
+  <ellipse cx="265" cy="235" rx="105" ry="125" fill="#f9d7c9"/>
+  <path d="M165 205 Q175 85 285 90 Q390 100 380 245 Q340 170 305 138 Q235 205 165 205Z" fill="#a968ad"/>
+  <path d="M202 245 Q225 225 247 245" fill="none" stroke="#513b58" stroke-width="8" stroke-linecap="round"/>
+  <path d="M283 245 Q305 225 328 245" fill="none" stroke="#513b58" stroke-width="8" stroke-linecap="round"/>
+  <path d="M225 295 Q265 340 305 295" fill="#c86678" stroke="#a84d64" stroke-width="5"/>
+  <circle cx="190" cy="285" r="20" fill="#f39aaa" opacity=".55"/>
+  <circle cx="340" cy="285" r="20" fill="#f39aaa" opacity=".55"/>
+  <path d="M180 425 Q260 470 340 425" fill="none" stroke="#ffffff" stroke-width="22"/>
+  <text x="260" y="735" text-anchor="middle" fill="#fff" font-size="24" font-family="sans-serif">真尋 · happy</text>
+</svg>

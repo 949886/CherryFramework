@@ -35,6 +35,7 @@ func _register_modules() -> void:
     _register_module(NavigationModule.new())
     _register_module(JoystickModule.new())
     _register_module(WaterModule.new())
+    _register_module(StoryModule.new())
 
 func _register_module(module: PluginModule) -> void:
     module._attach(self, _plugin_root)
