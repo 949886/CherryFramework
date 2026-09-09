@@ -1,4 +1,5 @@
 @tool
+@icon("../icons/story.svg")
 class_name Story
 extends Resource
 ## One playable story. Subclasses provide their own source format and resolver.

@@ -89,7 +89,7 @@ func _get_plugin_name() -> String:
     return "Story"
 
 func _get_plugin_icon() -> Texture2D:
-    return EditorInterface.get_editor_theme().get_icon("TextFile", "EditorIcons")
+    return preload("modules/story/icons/story.svg")
 
 func _save_external_data() -> void:
     var story_module := get_module(StoryModule.MODULE_ID) as StoryModule

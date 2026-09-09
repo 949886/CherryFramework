@@ -1,4 +1,5 @@
 @tool
+@icon("../icons/story.svg")
 class_name MarkdownStory
 extends Story
 ## A single Markdown-syntax entry and its discovered sibling translations.
