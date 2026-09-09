@@ -1,4 +1,4 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dwy8adkb2otxn"]
 
 [ext_resource type="Script" path="story_demo.gd" id="1_main"]
 [ext_resource type="PackedScene" path="../scenes/story_presenter.tscn" id="2_presenter"]
@@ -6,8 +6,9 @@
 [ext_resource type="Resource" path="story_library.tres" id="4_library"]
 [ext_resource type="Script" path="../gdscript/story_character.gd" id="5_character"]
 [ext_resource type="Resource" path="characters/mahiro.tres" id="6_mahiro"]
+[ext_resource type="Resource" path="../resources/runtime_dependencies.tres" id="7_runtime"]
 
-[node name="Main" type="Control" node_paths=PackedStringArray("player")]
+[node name="Main" type="Control" unique_id=763550191 node_paths=PackedStringArray("player")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -15,22 +16,21 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
-
 player = NodePath("StoryPlayer")
 
-[node name="Presentation" parent="." instance=ExtResource("2_presenter")]
-layout_mode = 1
+[node name="Presentation" parent="." unique_id=1637346339 instance=ExtResource("2_presenter")]
 characters = Array[ExtResource("5_character")]([ExtResource("6_mahiro")])
 
-[node name="StoryPlayer" type="Node" parent="." node_paths=PackedStringArray("presenter")]
+[node name="StoryPlayer" type="Node" parent="." unique_id=1638470860 node_paths=PackedStringArray("presenter")]
 script = ExtResource("3_player")
 library = ExtResource("4_library")
+runtime_dependencies = ExtResource("7_runtime")
 presenter = NodePath("../Presentation")
 initial_story = "mahiro"
 locale = "ja"
 save_path = "user://cherry_story_demo.json"
 
-[node name="TopBar" type="HBoxContainer" parent="."]
+[node name="TopBar" type="HBoxContainer" parent="." unique_id=175585052]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -41,27 +41,27 @@ offset_bottom = 48.0
 grow_horizontal = 2
 theme_override_constants/separation = 8
 
-[node name="Save" type="Button" parent="TopBar"]
+[node name="Save" type="Button" parent="TopBar" unique_id=2105266080]
 layout_mode = 2
 focus_mode = 0
 text = "Save"
 
-[node name="Load" type="Button" parent="TopBar"]
+[node name="Load" type="Button" parent="TopBar" unique_id=617563672]
 layout_mode = 2
 focus_mode = 0
 text = "Load"
 
-[node name="Restart" type="Button" parent="TopBar"]
+[node name="Restart" type="Button" parent="TopBar" unique_id=1248338247]
 layout_mode = 2
 focus_mode = 0
 text = "Restart"
 
-[node name="Locale" type="Button" parent="TopBar"]
+[node name="Locale" type="Button" parent="TopBar" unique_id=1775126135]
 layout_mode = 2
 focus_mode = 0
 text = "中文"
 
-[node name="Status" type="Label" parent="TopBar"]
+[node name="Status" type="Label" parent="TopBar" unique_id=1217002675]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.92, 0.93, 1, 1)
@@ -69,7 +69,7 @@ theme_override_font_sizes/font_size = 16
 text = "F / Space / Enter / 左键：推进文本"
 vertical_alignment = 1
 
-[node name="DebugBar" type="HBoxContainer" parent="."]
+[node name="DebugBar" type="HBoxContainer" parent="." unique_id=845113523]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -80,17 +80,17 @@ offset_bottom = 92.0
 grow_horizontal = 2
 theme_override_constants/separation = 8
 
-[node name="Favor95" type="Button" parent="DebugBar"]
+[node name="Favor95" type="Button" parent="DebugBar" unique_id=1118885154]
 layout_mode = 2
 focus_mode = 0
 text = "Debug 好感=95"
 
-[node name="Tire90" type="Button" parent="DebugBar"]
+[node name="Tire90" type="Button" parent="DebugBar" unique_id=452744628]
 layout_mode = 2
 focus_mode = 0
 text = "Debug 疲劳=90"
 
-[node name="Variables" type="Label" parent="DebugBar"]
+[node name="Variables" type="Label" parent="DebugBar" unique_id=42607885]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.8, 0.84, 0.92, 1)

@@ -40,6 +40,9 @@ var _label: RichTextLabel
 func setup(host: Object) -> void:
 	_host = host
 
+func configure_commands(registry: StoryCommandRegistry) -> void:
+	commands = registry
+
 func get_presenter_id() -> String:
 	return "default"
 

@@ -18,6 +18,9 @@ var source_path := ""
 func setup(_host: Object) -> void:
 	pass
 
+func configure_commands(_registry: StoryCommandRegistry) -> void:
+	pass
+
 func is_configured() -> bool:
 	return true
 

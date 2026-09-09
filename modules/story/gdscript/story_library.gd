@@ -1,3 +1,4 @@
+@tool
 class_name StoryLibrary
 extends Resource
 ## Maps logical story IDs to locale/file dictionaries. Relative paths resolve
@@ -6,19 +7,28 @@ extends Resource
 @export var stories: Dictionary = {}
 @export var fallback_locales: PackedStringArray = []
 @export var locale_labels: Dictionary = {}
+@export var commands: StoryCommandRegistry = preload("../resources/default_commands.tres")
+## Dependencies computed by author GDScript cannot be inferred from inline tokens.
+@export var extra_files: PackedStringArray = []
 @export var cache_enabled := true
 @export_range(0, 1024) var cache_capacity := 64
 
 var program_cache := StoryProgramCache.new()
 
 func resolve_path(story_id: String, locale: String) -> String:
-	var variants: Dictionary = stories.get(story_id, {})
+	var value: Variant = stories.get(story_id, {})
+	if not value is Dictionary:
+		return ""
+	var variants: Dictionary = value
 	var candidates: Array[String] = [locale]
 	for fallback in fallback_locales:
 		if fallback not in candidates:
 			candidates.append(fallback)
 	for candidate in candidates:
-		var path := String(variants.get(candidate, ""))
+		var configured: Variant = variants.get(candidate, "")
+		if not configured is String:
+			continue
+		var path := String(configured)
 		if path.is_empty():
 			continue
 		if not path.is_absolute_path():
@@ -26,6 +36,9 @@ func resolve_path(story_id: String, locale: String) -> String:
 		if FileAccess.file_exists(path):
 			return path
 	return ""
+
+func absolute_path(path: String) -> String:
+	return path if path.is_absolute_path() else resource_path.get_base_dir().path_join(path).simplify_path()
 
 func compile_story(story_id: String, locale: String) -> StoryProgram:
 	var path := resolve_path(story_id, locale)

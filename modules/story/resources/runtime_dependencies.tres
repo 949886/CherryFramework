@@ -1,0 +1,22 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="../gdscript/story_builtin_command.gd" id="1"]
+[ext_resource type="Script" path="../gdscript/story_character.gd" id="2"]
+[ext_resource type="Script" path="../gdscript/story_character_state.gd" id="3"]
+[ext_resource type="Script" path="../gdscript/story_command_handler.gd" id="4"]
+[ext_resource type="Script" path="../gdscript/story_command_registry.gd" id="5"]
+[ext_resource type="Script" path="../gdscript/story_inline_parser.gd" id="6"]
+[ext_resource type="Script" path="../gdscript/story_library.gd" id="7"]
+[ext_resource type="Script" path="../gdscript/story_parser.gd" id="8"]
+[ext_resource type="Script" path="../gdscript/story_presentation.gd" id="9"]
+[ext_resource type="Script" path="../gdscript/story_presentation_state.gd" id="10"]
+[ext_resource type="Script" path="../gdscript/story_presenter.gd" id="11"]
+[ext_resource type="Script" path="../gdscript/story_program.gd" id="12"]
+[ext_resource type="Script" path="../gdscript/story_program_cache.gd" id="13"]
+[ext_resource type="Script" path="../gdscript/story_save_manager.gd" id="14"]
+[ext_resource type="Script" path="../gdscript/story_vm.gd" id="15"]
+[ext_resource type="Resource" path="default_commands.tres" id="commands"]
+
+[resource]
+metadata/scripts = [ExtResource("1"), ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15")]
+metadata/commands = ExtResource("commands")

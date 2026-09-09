@@ -1,3 +1,4 @@
+@tool
 class_name StoryInlineParser
 extends RefCounted
 ## Parses presentation commands embedded in DIA/NAR content.

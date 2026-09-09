@@ -1,3 +1,4 @@
+@tool
 class_name StoryCommandHandler
 extends Resource
 ## Stateless command definition. Mutable playback data belongs to the renderer.

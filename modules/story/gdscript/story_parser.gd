@@ -1,3 +1,4 @@
+@tool
 class_name StoryParser
 extends RefCounted
 ## Markdown-like galgame script -> StoryProgram compiler.

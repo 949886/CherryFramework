@@ -1,3 +1,4 @@
+@tool
 class_name StoryPlayer
 extends Node
 ## Owns story playback, cross-file jumps and save/locale transitions. UI hosts
@@ -11,6 +12,8 @@ signal saved(automatic: bool)
 signal restored(quality: int)
 
 @export var library: StoryLibrary
+## A saved resource reference keeps global runtime classes in selected exports.
+@export_storage var runtime_dependencies: Resource
 @export var presenter: StoryPresentation
 @export var initial_story := ""
 @export var locale := ""
@@ -25,7 +28,13 @@ var current_story_id := ""
 var is_playing := false
 var _generation := 0
 
+func _init() -> void:
+	# Assign after the default value (null), so ResourceSaver persists the link.
+	runtime_dependencies = preload("../resources/runtime_dependencies.tres")
+
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	if presenter != null:
 		presenter.setup(self)
 		presenter.presentation_failed.connect(func(message): story_failed.emit(message))
@@ -36,6 +45,8 @@ func _start_initial() -> void:
 	play(initial_story)
 
 func _exit_tree() -> void:
+	if Engine.is_editor_hint():
+		return
 	stop()
 
 func stop() -> void:
@@ -49,6 +60,8 @@ func stop() -> void:
 func play(story_id: String, label: String = "", snapshot: Dictionary = {}, target_locale: String = "") -> Error:
 	if library == null or presenter == null or not is_inside_tree() or not presenter.is_configured():
 		return _fail("StoryPlayer requires a library, presenter and scene tree.", ERR_UNCONFIGURED)
+	if library.commands == null or not library.commands.validate().is_empty():
+		return _fail("StoryLibrary requires a valid command registry.", ERR_INVALID_DATA)
 	var next_locale := locale if target_locale.is_empty() else target_locale
 	var program := library.compile_story(story_id, next_locale)
 	if program == null:
@@ -70,6 +83,7 @@ func play(story_id: String, label: String = "", snapshot: Dictionary = {}, targe
 		if presentation_state == null or not presenter.can_restore(presentation_state):
 			return _fail("Invalid presentation state or missing saved assets.", ERR_INVALID_DATA)
 	stop()
+	presenter.configure_commands(library.commands)
 	vm = next_vm
 	locale = next_locale
 	current_story_id = story_id

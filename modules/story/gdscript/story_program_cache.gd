@@ -1,3 +1,4 @@
+@tool
 class_name StoryProgramCache
 extends RefCounted
 ## Bounded in-memory cache of compiled templates, never running story instances.

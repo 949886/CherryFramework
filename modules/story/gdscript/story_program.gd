@@ -1,3 +1,4 @@
+@tool
 class_name StoryProgram
 extends RefCounted
 ## StoryProgram is the compact IR consumed by StoryVM.

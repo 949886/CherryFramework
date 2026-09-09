@@ -17,7 +17,7 @@
 
 | 路径 / 类 | 用途 |
 | --- | --- |
-| `story_module.gd` | Cherry 模块注册；根据自身路径返回运行时及示例位置 |
+| `story_module.gd` | Cherry 模块注册、编辑器检查面板、Inspector 按钮与导出插件 |
 | `gdscript/story_library.gd` / `StoryLibrary` | 剧情 ID → 语言 → Markdown 路径，显式语言回退链与语言显示名称 |
 | `gdscript/story_player.gd` / `StoryPlayer` | 播放编排、跨文件跳转、存读档与语言切换 |
 | `StoryParser` / `StoryProgram` / `StoryVM` | Markdown 编译、IR、独立 GDScript 实例与控制流 |
@@ -26,7 +26,9 @@
 | `StoryCharacter` / `StoryCharacterState` | 可编辑角色及状态资源 |
 | `scenes/story_presenter.tscn` | 可复用、可继承编辑的默认表现层场景 |
 | `examples/` | 原 demo 的场景、角色、美术、声音及四份中日剧情；调试 UI 单独放在这里 |
-| `tests/story_test.gd` | Godot 行为回归与实际场景播放检查 |
+| `StoryLibraryValidator` / `editor/` | 库检查、源行定位与动态导出依赖 |
+| `resources/runtime_dependencies.tres` | 供选定场景导出使用的运行时依赖清单 |
+| `tests/` | 行为回归、编辑器生命周期及独立 PCK 播放验证 |
 
 运行时没有示例角色、剧情目录或语言判断。每个 `StoryPlayer` 持有独立 VM；跨文件跳转创建目标剧情自己的变量实例。资源库与角色资源可以共享。
 
@@ -80,7 +82,7 @@ player.restored.connect(func(_quality): print(player.save_manager.restore_qualit
 
 默认 `StoryPresenter` 的 View Nodes 全部通过导出引用连接，节点改名或改变层级无需修改脚本。`is_configured()` 在播放前检查引用和注册表。
 
-`commands` 指向 `StoryCommandRegistry`，默认资源为 `resources/default_commands.tres`。添加一个继承 `StoryCommandHandler` 的资源，配置 `command_name` 并实现 `execute(presentation, command) -> Error` 即可扩展指令；参数位于 `argument` 与 `attributes`。可用 `validate_argument` 返回诊断，`asset_type` 声明动态资源类型。处理器应无运行时可变状态；执行数据存放在当前表现层或游戏宿主。
+`StoryLibrary.commands` 指向 `StoryCommandRegistry`，播放时传给表现层，编辑器检查也使用同一注册表。默认资源为 `resources/default_commands.tres`；独立使用 `StoryPresenter` 时可以直接配置其 `commands`。添加一个继承 `StoryCommandHandler` 的 `@tool` 资源，配置 `command_name` 并实现 `execute(presentation, command) -> Error` 即可扩展指令；参数位于 `argument` 与 `attributes`。可用 `validate_argument` 返回诊断，`asset_type` 声明动态资源类型。处理器应无运行时可变状态；执行数据存放在当前表现层或游戏宿主。
 
 `StoryBuiltinCommand` 将可配置名称映射到表现层能力，例如新的 `hold` 指令可映射到 `command_wait`，继续使用统一时钟和存档游标。注册同名命令默认失败，只有显式 `register(handler, true)` 才替换。修改共享默认注册表前先 `duplicate(true)`；未知命令及无效参数会停止当前表现并发出诊断。
 
@@ -121,7 +123,19 @@ player.restored.connect(func(_quality): print(player.save_manager.restore_qualit
 
 缓存只保留无运行时实例的模板；每次播放深拷贝 IR 并创建新的剧情实例。作者 `_init()` 每次播放执行一次，模板编译不执行它。编译后的 `runtime_script` 会共享，应视为只读；实例变量与数组、字典不会共享。`program_cache.hits/misses/compilations` 可用于观察命中情况，失败结果不会缓存。
 
-导出时选择 **Export all resources in the project**，并在非资源文件导出过滤器添加 `*.md`，确保库引用的 Markdown 和剧情动态引用的图片、声音一起打包。使用选定场景/资源导出模式时，还需显式包含这些动态依赖。
+## 编辑器检查与导出
+
+启用 Cherry 插件后，使用「项目 → 工具 → Cherry: Check Story Libraries」或底部 **Story** 面板检查所有已保存的库。选中 `StoryLibrary` 资源时，Inspector 的 **Check Story Library** 按钮只检查当前库。结果包含路径、行号、错误码与消息，选择诊断即可在旁边预览源文件并定位到对应行。
+
+检查覆盖库配置、语法、命令及参数、素材存在性与类型、跨文件标题跳转、语言回退、翻译显式 SID 顺序/指令类型。翻译差异是警告。编译检查不创建剧情运行时实例，因此不调用作者 `_init()`；它仍会调用可信自定义命令的参数验证方法。
+
+导出插件自动加入被使用的库的所有语言 Markdown、行内资源以及导入后的素材数据，无需 `*.md` 过滤器。全资源导出检查所有库；选定场景/资源模式按资源依赖图筛选库，并包含 Autoload 的依赖。库应保存为独立 `.tres` / `.res` 文件。预设显式排除的文件不会被偷偷加回；与必需依赖冲突时报告错误。
+
+`StoryPlayer.runtime_dependencies` 是自动保存的内部资源引用，保证全局脚本类进入 Godot 正常导出流程；`resources/runtime_dependencies.tres` 集中声明运行时脚本与默认命令资源。新增运行时类时同步更新清单。现有场景重新保存一次即可获得引用；示例已配置。编辑器中的 StoryPlayer 不会播放剧情。
+
+作者代码计算出的路径无法从 Markdown 推断：把这些文件加入 `StoryLibrary.extra_files`，相对路径以库资源目录为基准。额外资源的依赖也会收集；自定义全局脚本类应通过场景、资源或运行时清单建立常规引用，使 Godot 的全局类缓存也包含它们。
+
+导出诊断会显示在 Godot 导出日志中；错误日志不保证 Godot 不生成 PCK，发布前应使检查结果为零错误。当前已验证 Windows Desktop PCK、兼容渲染器、全运行时脚本和选定场景导出；其他平台的素材导入格式仍应在目标平台验证。未启用插件时，需自行配置 Markdown 与动态依赖的导出过滤器。
 
 ## 验证
 
@@ -135,3 +149,11 @@ godot --headless --path . --script res://addons/cherry/modules/story/tests/story
 ```
 
 测试覆盖四份剧情编译、相对素材路径、中日分支及条件执行、跨文件跳转、独立变量、Tab/空格缩进、本地标题、存档 JSON 与恢复策略、场景资源装配、语言切换、失败加载保留现场、取消旧选项，以及实际表现层播放到跨文件 END。验证也可在独立项目中仅复制 Cherry addon 后执行，或修改命令路径验证搬移后的模块。
+
+完整隔离验证（会把模块搬移到临时项目的另一目录，不修改宿主项目设置）：
+
+```shell
+python addons/cherry/modules/story/tests/run_tests.py --godot /path/to/godot --editor-export
+```
+
+包含 281 项运行时检查、真实编辑器插件注册/卸载与新场景依赖保存、仅选定场景导出、从空目录运行 PCK 到跨文件 END，以及无效剧情的导出诊断。单组测试可用 `--test validator_test.gd` 等参数。

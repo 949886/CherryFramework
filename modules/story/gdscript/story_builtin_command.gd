@@ -1,3 +1,4 @@
+@tool
 class_name StoryBuiltinCommand
 extends StoryCommandHandler
 ## Maps a configured command to a renderer capability; the registry defines names.

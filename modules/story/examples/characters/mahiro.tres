@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="StoryCharacter" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="StoryCharacter" format=3 uid="uid://17x56bvjafnr"]
 
 [ext_resource type="Script" path="../../gdscript/story_character.gd" id="1_char"]
 [ext_resource type="Script" path="../../gdscript/story_character_state.gd" id="2_state"]
@@ -7,19 +7,21 @@
 
 [sub_resource type="Resource" id="StateDefault"]
 script = ExtResource("2_state")
-id = &"default"
 portrait = ExtResource("3_default")
-metadata = {"note": "Default static portrait; replaceable by a richer presenter."}
+metadata = {
+"note": "Default static portrait; replaceable by a richer presenter."
+}
 
 [sub_resource type="Resource" id="StateHappy"]
 script = ExtResource("2_state")
 id = &"happy"
 portrait = ExtResource("4_happy")
-metadata = {"emotion": "happy"}
+metadata = {
+"emotion": "happy"
+}
 
 [resource]
 script = ExtResource("1_char")
 id = &"mahiro"
 display_name = "真尋"
-default_state = &"default"
 states = Array[ExtResource("2_state")]([SubResource("StateDefault"), SubResource("StateHappy")])
