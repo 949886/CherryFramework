@@ -612,10 +612,10 @@ func _execute_pop_many(targets: Array[NavigationRoute]) -> void:
             mounted_targets.append(route)
     if mounted_targets.is_empty():
         return
-    var bottom_target := mounted_targets.back()
+    var bottom_target: NavigationRoute = mounted_targets.back()
     var bottom_index := _mounted_routes.find(bottom_target)
     var final_incoming: NavigationRoute = _mounted_routes[bottom_index - 1] if bottom_index > 0 else null
-    var top_outgoing := mounted_targets.front()
+    var top_outgoing: NavigationRoute = mounted_targets.front()
     for route: NavigationRoute in mounted_targets:
         route.state = NavigationRoute.State.POPPING
         route_popping.emit(route, null)
