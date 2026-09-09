@@ -69,4 +69,4 @@ godot --headless --path . --script res://addons/cherry/modules/2d/water/tests/sc
 
 折射使用 Godot 屏幕纹理，水体应绘制在需要折射的场景之后。互不重叠的水体可共享屏幕拷贝；叠放水体需要自行安排 BackBufferCopy。水花与气泡使用水体局部重力方向。本模块不包含宿主的角色控制、音效或全屏 bloom。
 
-演示物体使用独立的 `examples/floating_object.tscn`，由示例根节点的 Object Scene 导出属性引用。可编辑外观、碰撞、质量、重力、浮力与水阻参数；Objects 节点收纳运行时实例，默认最多 24 个，60 秒后自动回收。浮力属于演示脚本，不耦合到水体核心。运行 `tests/float_test.gd` 可验证下落、入水、漂浮、弹起、暂停及清空。
+演示物体使用独立的 `examples/floating_object.tscn`，由示例根节点的 Object Scene 导出属性引用。可编辑外观、碰撞、质量、重力、浮力与水阻参数；Objects 节点收纳运行时实例，默认最多 24 个，60 秒后自动回收。浮力由 `gdscript/cherry_floating_object_2d.gd` 中的 `CherryFloatingObject2D` 提供，不耦合到水体核心。运行 `tests/float_test.gd` 可验证下落、入水、漂浮、弹起、暂停及清空。

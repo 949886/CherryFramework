@@ -1,7 +1,9 @@
-class_name CherryWaterDemoFloat
+class_name CherryFloatingObject2D
 extends RigidBody2D
 
-## Demo-specific buoyancy; the water module remains independent of rigid bodies.
+## 可交互的二维浮动物体：刚体重力与碰撞由 Godot 处理，水体只提供几何查询和波浪交互。
+## 场景须提供 Body、Highlight（Polygon2D）及 CollisionShape2D 子节点；
+## 可直接复用 examples/floating_object.tscn，并在入树前设置 pools。
 ## 生成几何的尺度，单位为局部像素；圆形与正多边形使用外接圆半径。
 @export var radius := 9.0
 ## 完全浸水时浮力相对重力的倍数；默认 2 使物体约半浸水时平衡。

@@ -17,7 +17,7 @@ func _run() -> void:
     var path: String=get_script().resource_path.get_base_dir().path_join("../examples/two_pools.tscn")
     var scene: Node2D=load(path).instantiate()
     root.add_child(scene)
-    var body: CherryWaterDemoFloat=scene.drop_object(Vector2(190,70))
+    var body: CherryFloatingObject2D=scene.drop_object(Vector2(190,70))
     await frames(10)
     check(body.global_position.y>70,"Object falls under gravity")
     await frames(180)
@@ -41,7 +41,7 @@ func _run() -> void:
     await process_frame
     check(scene.objects.get_child_count()==0,"Reset clears objects")
     for kind in range(1,8):
-        var shaped: CherryWaterDemoFloat=scene.object_scene.instantiate()
+        var shaped: CherryFloatingObject2D=scene.object_scene.instantiate()
         shaped.shape_kind=kind
         shaped.pools=scene.pools
         scene.objects.add_child(shaped)

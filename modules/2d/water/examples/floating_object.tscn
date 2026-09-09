@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3]
 
-[ext_resource type="Script" path="floating_object.gd" id="1"]
+[ext_resource type="Script" path="../gdscript/cherry_floating_object_2d.gd" id="1"]
 
 [sub_resource type="CircleShape2D" id="Shape"]
 radius = 9.0
