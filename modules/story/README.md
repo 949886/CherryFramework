@@ -13,7 +13,11 @@ Godot 4 的 Markdown 剧情模块。入口是一个 `Story` 资源；当前实�
 
 ## 文件命名与多语言
 
-必须使用 `剧情ID.md` 或 `剧情ID.语言.md`：
+同时支持 `.md` 和 `.story`，两者使用相同的 Markdown 剧情语法，都会导入为 `MarkdownStory`。下文 `.md` 入口的操作也适用于 `.story`。升级后重新启用 Cherry，让导入器注册新增扩展名。
+
+例如 `intro.ja.story`、`intro.zh-cn.story`、`intro.story` 均可直接拖到 `StoryPlayer.story`。跳转可以写 `>>[继续](chapter2.story#开场)`，也可以在 `.md` 与 `.story` 之间跳转。同目录同 ID 的翻译允许混用扩展名；同一语言若两种文件都存在，优先使用当前入口的扩展名，建议每种语言只维护一份。
+
+文件名采用 `剧情ID.扩展名` 或 `剧情ID.语言.扩展名`，扩展名为 `md` 或 `story`：
 
 ```text
 stories/

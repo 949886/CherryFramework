@@ -1,6 +1,6 @@
 @tool
 extends EditorImportPlugin
-## Makes .md files assignable to StoryPlayer.story without a separate .tres.
+## Makes .md/.story files assignable to StoryPlayer.story without a separate .tres.
 
 func _get_importer_name() -> String:
 	return "cherry.story.markdown"
@@ -9,7 +9,7 @@ func _get_visible_name() -> String:
 	return "Story (Markdown)"
 
 func _get_recognized_extensions() -> PackedStringArray:
-	return ["md"]
+	return PackedStringArray(MarkdownStory.SUPPORTED_EXTENSIONS)
 
 func _get_save_extension() -> String:
 	return "res"

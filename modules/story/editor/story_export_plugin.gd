@@ -70,8 +70,8 @@ func _excluded(path: String) -> bool:
 	return false
 
 func _export_file(path: String, _type: String, _features: PackedStringArray) -> void:
-	# Keep source text even when Godot exports an imported .md resource directly.
-	if path.get_extension().to_lower() == "md" and not _injected.has(path):
+	# Keep source text even when Godot exports an imported story resource directly.
+	if MarkdownStory.supports_path(path) and not _injected.has(path):
 		_include_resource(path)
 	if _injected.has(path):
 		skip()

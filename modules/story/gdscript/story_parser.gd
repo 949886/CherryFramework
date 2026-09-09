@@ -45,7 +45,7 @@ var diagnostics: Array[Dictionary] = []
 
 const STORY_TAB_WIDTH := 4
 ## Bump when lowering, generated code or program metadata semantics change.
-const COMPILER_VERSION := "3"
+const COMPILER_VERSION := "4"
 
 
 func compile_file(path: String, story_id: String) -> StoryProgram:
@@ -428,8 +428,8 @@ func _compile_story_jump(text: String) -> void:
 		address["label"] = destination.substr(1)
 	else:
 		var file_target := destination.get_slice("#", 0)
-		if not file_target.ends_with(".md") or file_target == ".md":
-			_errors.append("line %d: jump target must be ##heading or story.md[#heading]" % _current_source_line)
+		if not MarkdownStory.supports_path(file_target) or file_target.get_file() == "." + file_target.get_extension():
+			_errors.append("line %d: jump target must be ##heading or a story file (%s), optionally followed by #heading" % [_current_source_line, ", ".join(MarkdownStory.SUPPORTED_EXTENSIONS)])
 			return
 		address["story"] = _story_id_from_filename(file_target)
 		if destination.contains("#"):

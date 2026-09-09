@@ -9,7 +9,7 @@ static func stories(roots: PackedStringArray = []) -> Array[Story]:
 	var result: Array[Story] = []
 	for path in dependency_closure(sources):
 		var extension := String(path).get_extension().to_lower()
-		var candidate := extension == "md"
+		var candidate := MarkdownStory.supports_path(path)
 		if extension == "tres":
 			candidate = FileAccess.get_file_as_string(path).contains('script_class="MarkdownStory"')
 		elif extension == "res":
