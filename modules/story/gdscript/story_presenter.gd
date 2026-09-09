@@ -1,10 +1,9 @@
 class_name StoryPresenter
 extends Control
-## Presentation layer for DIA/NAR/CHO.
-##
-## This class owns all asynchronous UI behavior: typewriter timing, [wait],
-## [i], audio, background transitions and popup images.  StoryVM never needs
-## opcodes for these effects.
+## Default view with a serializable, frame-driven presentation state machine.
+
+signal event_completed
+signal presentation_failed(message: String)
 
 @export_range(0.0, 1.0, 0.005) var character_delay := 0.035
 @export_range(0.0, 10.0, 0.1) var background_fade_duration := 1.2
@@ -13,8 +12,16 @@ extends Control
 @export var advance_mouse_button: MouseButton = MOUSE_BUTTON_LEFT
 @export var choice_minimum_size := Vector2(0, 54)
 @export var choice_font_size := 22
+@export var auto_play := false
+@export_range(0.0, 10.0, 0.1) var auto_advance_delay := 1.0
+@export var fast_forward := false
+@export_range(1.0, 100.0, 1.0) var fast_forward_multiplier := 10.0
+@export var paused := false:
+	set(value):
+		paused = value
+		if is_node_ready():
+			audio_player.stream_paused = value
 
-## Relative inline asset paths resolve against the current Markdown source.
 var source_path := ""
 
 @onready var background: TextureRect = $Background
@@ -29,257 +36,281 @@ var source_path := ""
 @onready var popup_texture: TextureRect = $PopupLayer/Center/PopupTexture
 @onready var audio_player: AudioStreamPlayer = $AudioPlayer
 
-var _inline_parser := StoryInlineParser.new()
 var _host: Object
+var _state := StoryPresentationState.new()
+var _pending_state: StoryPresentationState
+var _resume_progress := false
+var _tokens: Array[Dictionary] = []
+var _active := false
 var _advance_pressed := false
-var _accept_input := false
-var _chosen_index := -1
 var _cancel_token := 0
-var _background_tween: Tween
-
+var _chosen_index := -1
+var _label: RichTextLabel
 
 func setup(host: Object) -> void:
 	_host = host
 
-
 func _exit_tree() -> void:
 	cancel_current()
 
-
-## Hosts can advance from their own buttons, touch controls or input actions.
 func advance() -> void:
-	if _accept_input:
+	if _active and not paused:
 		_advance_pressed = true
 
-
 func cancel_current() -> void:
-	## Invalidates any active coroutine. StoryPlayer uses this before load,
-	## restart or locale switching so an old await chain cannot resume later.
 	_cancel_token += 1
-	_advance_pressed = true
-	_accept_input = false
+	_active = false
+	_advance_pressed = false
 	_chosen_index = -1
-	if _background_tween != null:
-		_background_tween.kill()
-		_background_tween = null
-	audio_player.stop()
-	background.modulate.a = 1.0
-	choices_panel.hide()
-	popup_layer.hide()
-	article_panel.hide()
-	dialogue_panel.hide()
-
+	_pending_state = null
+	if is_node_ready():
+		audio_player.stop()
+		choices_panel.hide()
+		popup_layer.hide()
+		article_panel.hide()
+		dialogue_panel.hide()
+	event_completed.emit()
 
 func present_dialogue(payload: Dictionary) -> bool:
-	var token := _cancel_token
-	article_panel.hide()
-	choices_panel.hide()
-	dialogue_panel.show()
-
-	var speaker := String(payload.get("speaker", ""))
-	var state := StringName(payload.get("state", "default"))
-	speaker_label.text = speaker
-	_show_character(speaker, state)
-
-	if not await _play_inline(String(payload.get("content", "")), dialogue_text, token):
-		return false
-	if not await _wait_for_advance(token):
-		return false
+	var token := _begin("dialogue", payload)
+	while token == _cancel_token and _active:
+		await event_completed
 	return token == _cancel_token
-
 
 func present_narration(payload: Dictionary) -> bool:
-	var token := _cancel_token
-	var silent := bool(payload.get("silent", false))
-	var content := String(payload.get("content", ""))
-
-	if silent:
-		# Silent NAR is the IR representation for standalone presentation content
-		# such as [save], background changes, or popup image syntax.
-		return await _play_inline(content, article_text, token, true)
-
-	dialogue_panel.hide()
-	choices_panel.hide()
-	article_panel.show()
-	if not await _play_inline(content, article_text, token):
-		return false
-	if not await _wait_for_advance(token):
-		return false
-	article_panel.hide()
+	var token := _begin("silent" if payload.get("silent", false) else "narration", payload)
+	while token == _cancel_token and _active:
+		await event_completed
 	return token == _cancel_token
-
 
 func present_choice(payload: Dictionary) -> int:
-	var token := _cancel_token
-	_accept_input = false
+	var token := _begin("choice", payload)
+	while token == _cancel_token and _active:
+		await event_completed
+	return _chosen_index if token == _cancel_token else -1
+
+func capture_state() -> StoryPresentationState:
+	_state.dialogue_text = dialogue_text.text
+	_state.dialogue_characters = maxi(0, dialogue_text.visible_characters)
+	_state.speaker = speaker_label.text
+	_state.article_text = article_text.text
+	_state.article_characters = maxi(0, article_text.visible_characters)
+	_state.dialogue_shown = dialogue_panel.visible
+	_state.article_shown = article_panel.visible
+	_state.audio_playing = audio_player.playing
+	_state.audio_position = audio_player.get_playback_position() if audio_player.playing else 0.0
+	return _state.copy()
+
+func can_restore(state: StoryPresentationState) -> bool:
+	for path in [state.background_path, state.portrait_path, state.popup_path]:
+		if not path.is_empty() and (not ResourceLoader.exists(path) or not load(path) is Texture2D):
+			return false
+	return state.audio_path.is_empty() or (ResourceLoader.exists(state.audio_path) and load(state.audio_path) is AudioStream)
+
+func restore_state(state: StoryPresentationState, resume_progress: bool) -> void:
+	_pending_state = state.copy()
+	_resume_progress = resume_progress
+	_state = state.copy()
+	_apply_visuals()
+
+func _begin(mode: String, payload: Dictionary) -> int:
+	# Supersede previous awaiters without stopping audio between ordinary lines.
+	_cancel_token += 1
+	_active = false
+	event_completed.emit()
+	var restoring := _pending_state != null and _resume_progress and _pending_state.mode == mode and _pending_state.payload == payload
+	if restoring:
+		_state = _pending_state.copy()
+	else:
+		_state.mode = mode
+		_state.payload = payload.duplicate(true)
+		_state.token_index = 0
+		_state.visible_characters = 0
+		_state.text_time = 0.0
+		_state.remaining = 0.0
+		_state.phase = "choice" if mode == "choice" else "next"
+	_pending_state = null
+	_advance_pressed = false
 	_chosen_index = -1
-	choices_panel.show()
+	_active = true
+	if mode in ["dialogue", "narration"]:
+		article_panel.visible = mode == "narration"
+		dialogue_panel.visible = mode == "dialogue"
+	choices_panel.visible = mode == "choice"
+	popup_layer.visible = _state.phase == "popup"
+	_label = dialogue_text if mode == "dialogue" else article_text
+	if mode == "dialogue":
+		speaker_label.text = String(payload.get("speaker", ""))
+		_show_character(speaker_label.text, StringName(payload.get("state", "default")))
+	if mode == "choice":
+		_build_choices(payload)
+	else:
+		_tokens = StoryInlineParser.new().parse(String(payload.get("content", "")))
+		var bbcode := ""
+		for item in _tokens:
+			if item.type == "text":
+				bbcode += item.bbcode
+		_label.bbcode_enabled = true
+		_label.text = bbcode
+		_label.visible_characters = _state.visible_characters
+		if _state.token_index > _tokens.size():
+			_state.token_index = 0
+			_state.phase = "next"
+	return _cancel_token
 
-	for old_child in choices_panel.get_children():
-		choices_panel.remove_child(old_child)
-		old_child.queue_free()
+func _process(delta: float) -> void:
+	advance_time(delta)
 
-	var options: Array = payload.get("options", [])
-	for option_index in range(options.size()):
-		var option: Dictionary = options[option_index]
-		var button := Button.new()
-		button.text = String(option.get("text", ""))
-		button.custom_minimum_size = choice_minimum_size
-		button.add_theme_font_size_override("font_size", choice_font_size)
-		button.pressed.connect(_on_choice_pressed.bind(option_index))
-		choices_panel.add_child(button)
-
-	while _chosen_index < 0 and token == _cancel_token:
-		await get_tree().process_frame
-
-	if token != _cancel_token:
-		return -1
-	choices_panel.hide()
-	return _chosen_index
-
-
-func _play_inline(content: String, label: RichTextLabel, token: int, silent := false) -> bool:
-	var tokens := _inline_parser.parse(content)
-	var full_bbcode := ""
-	for item in tokens:
-		if item["type"] == "text":
-			full_bbcode += String(item["bbcode"])
-
-	label.bbcode_enabled = true
-	label.text = full_bbcode
-	label.visible_characters = 0
-	var visible_cursor := 0
-	_accept_input = not silent
-	_advance_pressed = false
-
-	for item in tokens:
-		if token != _cancel_token:
-			return false
-
-		if item["type"] == "text":
-			visible_cursor += int(item["visible_length"])
-			if not await _reveal_until(label, visible_cursor, token):
-				return false
-			continue
-
-		if not await _execute_command(item, token):
-			return false
-
-	if token != _cancel_token:
-		return false
-	label.visible_characters = -1
-	_accept_input = false if silent else _accept_input
-	return token == _cancel_token
-
-
-func _reveal_until(label: RichTextLabel, target: int, token: int) -> bool:
-	_accept_input = true
-	while label.visible_characters < target:
-		if token != _cancel_token:
-			return false
-		if _advance_pressed:
-			# A click/F while typing completes only the current text segment.  A
-			# later [wait] or [i] command still receives its own fresh interaction.
-			_advance_pressed = false
-			label.visible_characters = target
-			break
-		label.visible_characters += 1
-		if character_delay > 0.0:
-			await get_tree().create_timer(character_delay).timeout
-	return token == _cancel_token
-
-
-func _execute_command(command: Dictionary, token: int) -> bool:
-	var name := String(command.get("name", ""))
-	var argument := String(command.get("argument", ""))
-	var attributes: Dictionary = command.get("attributes", {})
-
-	match name:
-		"audio":
-			_play_audio(argument)
-
-		"wait":
-			_advance_pressed = false
-			var seconds := _parse_seconds(argument)
-			if not await _wait_seconds(seconds, token):
-				return false
-			_advance_pressed = false
-
-		"i":
-			if not await _wait_for_advance(token):
-				return false
-
-		"save":
-			if _host != null and _host.has_method("save_game"):
-				_host.call("save_game", true)
-
-		"bg":
-			if not await _set_background(argument, String(attributes.get("transition", "none")), token):
-				return false
-
-		"popup":
-			if not await _show_popup(argument, token):
-				return false
-
-		_:
-			push_warning("Unknown inline command: [%s]" % name)
-
-	return token == _cancel_token
-
-
-func _wait_for_advance(token: int) -> bool:
-	_advance_pressed = false
-	_accept_input = true
-	while not _advance_pressed and token == _cancel_token:
-		await get_tree().process_frame
-	if token != _cancel_token:
-		return false
-	_advance_pressed = false
-	_accept_input = false
-	return token == _cancel_token
-
-
-func _set_background(path: String, transition: String, token: int) -> bool:
-	var texture := load(resolve_asset_path(path)) as Texture2D
-	if texture == null:
-		push_warning("Background not found: %s" % path)
-		return true
-
-	if transition.to_lower() == "fadein":
-		background.texture = texture
-		background.modulate.a = 0.0
-		_background_tween = create_tween()
-		_background_tween.tween_property(background, "modulate:a", 1.0, background_fade_duration)
-		if not await _wait_seconds(background_fade_duration, token):
-			return false
-		return token == _cancel_token
-
-	background.texture = texture
-	background.modulate.a = 1.0
-	return true
-
-
-func _show_popup(path: String, token: int) -> bool:
-	var texture := load(resolve_asset_path(path)) as Texture2D
-	if texture == null:
-		push_warning("Popup texture not found: %s" % path)
-		return true
-	popup_texture.texture = texture
-	popup_layer.show()
-	if not await _wait_for_advance(token):
-		return false
-	popup_layer.hide()
-	return true
-
-
-func _play_audio(path: String) -> void:
-	var stream := load(resolve_asset_path(path)) as AudioStream
-	if stream == null:
-		push_warning("Audio stream not found: %s" % path)
+## Single simulation clock; can also be advanced explicitly in deterministic tests.
+func advance_time(delta: float) -> void:
+	if not _active or paused or delta < 0:
 		return
-	audio_player.stream = stream
-	audio_player.play() # Non-blocking by design.
+	var budget := delta * (fast_forward_multiplier if fast_forward else 1.0)
+	for transition in range(64):
+		match _state.phase:
+			"choice":
+				return
+			"next":
+				if _state.token_index >= _tokens.size():
+					if _state.mode == "silent":
+						_finish()
+						return
+					_state.phase = "end"
+					_state.remaining = auto_advance_delay
+					continue
+				var item: Dictionary = _tokens[_state.token_index]
+				if item.type == "text":
+					_state.phase = "text"
+					continue
+				_state.token_index += 1 # [save] resumes after itself, never repeats.
+				var token := _cancel_token
+				_execute_command(item)
+				if token != _cancel_token:
+					return
+			"text":
+				var target := _text_target(_state.token_index)
+				if _advance_pressed or character_delay <= 0.0:
+					_state.visible_characters = target
+					_advance_pressed = false
+					_state.text_time = 0.0
+				else:
+					var available := _state.text_time + budget
+					var count := mini(target - _state.visible_characters, int((available + 0.0000001) / character_delay))
+					_state.visible_characters += count
+					_state.text_time = maxf(0.0, available - count * character_delay)
+					budget = _state.text_time if _state.visible_characters == target else 0.0
+					if _state.visible_characters == target:
+						_state.text_time = 0.0
+				_label.visible_characters = _state.visible_characters
+				if _state.visible_characters < target:
+					return
+				_state.token_index += 1
+				_state.phase = "next"
+			"wait", "fade":
+				var elapsed := minf(budget, _state.remaining)
+				if _state.phase == "fade":
+					_state.background_alpha = lerpf(_state.background_alpha, 1.0, elapsed / _state.remaining) if _state.remaining > 0 else 1.0
+					background.modulate.a = _state.background_alpha
+				_state.remaining = maxf(0.0, _state.remaining - elapsed)
+				budget -= elapsed
+				_advance_pressed = false
+				if _state.remaining > 0.0:
+					return
+				_state.phase = "next"
+			"input", "end", "popup":
+				if auto_play or fast_forward:
+					_state.remaining = maxf(0.0, _state.remaining - budget)
+				if not _advance_pressed and not ((auto_play or fast_forward) and _state.remaining <= 0.0):
+					return
+				_advance_pressed = false
+				if _state.phase == "end":
+					_finish()
+					return
+				if _state.phase == "popup":
+					popup_layer.hide()
+					_state.popup_path = ""
+				_state.phase = "next"
+				budget = 0.0
+			_:
+				return
 
+func _finish() -> void:
+	_active = false
+	if _state.mode == "narration":
+		article_panel.hide()
+	event_completed.emit()
+
+func _text_target(index: int) -> int:
+	var target := 0
+	for i in range(mini(index + 1, _tokens.size())):
+		if _tokens[i].type == "text":
+			target += int(_tokens[i].visible_length)
+	return target
+
+func _execute_command(command: Dictionary) -> void:
+	var argument := String(command.get("argument", ""))
+	match String(command.get("name", "")):
+		"wait":
+			_state.phase = "wait"
+			_state.remaining = _parse_seconds(argument)
+		"i":
+			_state.phase = "input"
+			_state.remaining = auto_advance_delay
+		"save":
+			if is_instance_valid(_host) and _host.has_method("save_game"):
+				_host.call("save_game", true)
+		"audio":
+			var path := resolve_asset_path(argument)
+			if _asset_exists(path, "AudioStream"):
+				_state.audio_path = path
+				audio_player.stream = load(path) as AudioStream
+				audio_player.play()
+		"bg":
+			var path := resolve_asset_path(argument)
+			if _asset_exists(path, "Texture2D"):
+				_state.background_path = path
+				background.texture = load(path) as Texture2D
+				var fade := String(command.get("attributes", {}).get("transition", "none")) == "fadein"
+				_state.background_alpha = 0.0 if fade and background_fade_duration > 0 else 1.0
+				background.modulate.a = _state.background_alpha
+				if fade:
+					_state.phase = "fade"
+					_state.remaining = background_fade_duration
+		"popup":
+			var path := resolve_asset_path(argument)
+			if _asset_exists(path, "Texture2D"):
+				_state.popup_path = path
+				popup_texture.texture = load(path) as Texture2D
+				popup_layer.show()
+				_state.phase = "popup"
+				_state.remaining = auto_advance_delay
+		_:
+			presentation_failed.emit("Unknown inline command: %s" % command.get("name", ""))
+
+func _asset_exists(path: String, type: String) -> bool:
+	if ResourceLoader.exists(path, type):
+		return true
+	presentation_failed.emit("Missing %s: %s" % [type, path])
+	return false
+
+func _apply_visuals() -> void:
+	dialogue_text.text = _state.dialogue_text
+	dialogue_text.visible_characters = _state.dialogue_characters
+	speaker_label.text = _state.speaker
+	article_text.text = _state.article_text
+	article_text.visible_characters = _state.article_characters
+	dialogue_panel.visible = _state.dialogue_shown
+	article_panel.visible = _state.article_shown
+	background.texture = load(_state.background_path) as Texture2D if not _state.background_path.is_empty() else null
+	background.modulate.a = _state.background_alpha
+	portrait.texture = load(_state.portrait_path) as Texture2D if not _state.portrait_path.is_empty() else null
+	portrait.visible = portrait.texture != null
+	popup_texture.texture = load(_state.popup_path) as Texture2D if not _state.popup_path.is_empty() else null
+	popup_layer.visible = _state.phase == "popup"
+	if not _state.audio_path.is_empty() and _state.audio_playing:
+		audio_player.stream = load(_state.audio_path) as AudioStream
+		audio_player.play(_state.audio_position)
+		audio_player.stream_paused = paused
 
 func _show_character(speaker: String, state_id: StringName) -> void:
 	for character in characters:
@@ -289,68 +320,52 @@ func _show_character(speaker: String, state_id: StringName) -> void:
 		if state != null and state.portrait != null:
 			portrait.texture = state.portrait
 			portrait.show()
+			_state.portrait_path = state.portrait.resource_path
 		return
-	# Unknown speakers do not implicitly replace the previous portrait.
 
+func _build_choices(payload: Dictionary) -> void:
+	for child in choices_panel.get_children():
+		choices_panel.remove_child(child)
+		child.queue_free()
+	var options: Array = payload.get("options", [])
+	for index in options.size():
+		var button := Button.new()
+		button.text = String(options[index].get("text", ""))
+		button.custom_minimum_size = choice_minimum_size
+		button.add_theme_font_size_override("font_size", choice_font_size)
+		button.pressed.connect(_choose.bind(index, _cancel_token))
+		choices_panel.add_child(button)
+
+func _choose(index: int, token: int) -> void:
+	if token != _cancel_token or not _active or paused:
+		return
+	_chosen_index = index
+	choices_panel.hide()
+	_finish()
+
+func resolve_asset_path(path: String) -> String:
+	return path if path.is_absolute_path() else source_path.get_base_dir().path_join(path).simplify_path()
 
 func _parse_seconds(value: String) -> float:
 	var normalized := value.strip_edges().to_lower()
 	if normalized.ends_with("ms"):
 		return maxf(0.0, normalized.trim_suffix("ms").to_float() / 1000.0)
-	if normalized.ends_with("s"):
-		normalized = normalized.trim_suffix("s")
-	return maxf(0.0, normalized.to_float())
-
-
-func resolve_asset_path(path: String) -> String:
-	return path if path.is_absolute_path() else source_path.get_base_dir().path_join(path).simplify_path()
-
-
-func _wait_seconds(seconds: float, token: int) -> bool:
-	var deadline := Time.get_ticks_msec() + int(seconds * 1000.0)
-	while Time.get_ticks_msec() < deadline:
-		if token != _cancel_token:
-			return false
-		await get_tree().process_frame
-	return token == _cancel_token
-
-
-func _on_choice_pressed(index: int) -> void:
-	_chosen_index = index
-
+	return maxf(0.0, normalized.trim_suffix("s").to_float())
 
 func _input(event: InputEvent) -> void:
-	## Advance input is handled in _input rather than _unhandled_input.
-	##
-	## Why: RichTextLabel/PanelContainer are Controls and may consume mouse clicks
-	## during Godot's GUI input phase.  In that case _unhandled_input never sees the
-	## click, which made narration advance with F but not with the mouse.
-	##
-	## We deliberately ignore clicks over BaseButton controls so Save/Load/Debug
-	## and choice buttons keep their normal UI semantics and never advance text as
-	## a side effect of being clicked.
-	if not _accept_input:
+	if not _active or paused or _state.phase == "choice":
 		return
-
-	var advance := false
+	var pressed := false
 	if event is InputEventMouseButton:
-		if event.pressed and advance_mouse_button != MOUSE_BUTTON_NONE and event.button_index == advance_mouse_button:
-			if _pointer_is_over_button():
-				return
-			advance = true
+		pressed = event.pressed and advance_mouse_button != MOUSE_BUTTON_NONE and event.button_index == advance_mouse_button and not _pointer_is_over_button()
 	elif event is InputEventKey:
-		advance = event.pressed and not event.echo and event.keycode in advance_keys
-
-	if advance:
-		_advance_pressed = true
+		pressed = event.pressed and not event.echo and event.keycode in advance_keys
+	if pressed:
+		advance()
 		get_viewport().set_input_as_handled()
 
-
 func _pointer_is_over_button() -> bool:
-	## `gui_get_hovered_control()` returns the deepest Control under the pointer.
-	## Walk upward because the hovered node may be a Label/Icon nested in a Button.
-	var hovered := get_viewport().gui_get_hovered_control()
-	var current: Node = hovered
+	var current: Node = get_viewport().gui_get_hovered_control()
 	while current != null:
 		if current is BaseButton:
 			return true

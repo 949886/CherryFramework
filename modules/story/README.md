@@ -60,6 +60,10 @@ player.load_game()
 player.switch_locale("en")
 player.restart()                 # 回到 initial_story
 player.stop()
+player.pause()
+player.resume()
+player.set_auto_play(true)
+player.set_fast_forward(true)
 
 player.story_finished.connect(func(story_id): print(story_id))
 player.story_failed.connect(func(message): print(message))
@@ -95,7 +99,11 @@ player.restored.connect(func(_quality): print(player.save_manager.restore_qualit
 
 语言切换使用相同流程；没有共享 SID 时可能采用位置或类型回退，并通过 `restored` 报告实际等级。对示例资源路径的改写会改变涉及这些路径的自动 SID / 严格签名，原 demo 存档可能进入回退；示例使用独立的新存档文件。
 
-读取后从当前句开头重播，不保存打字机内部游标或完整画面状态。仅自动保存顶部普通 `var` 成员，值应为 JSON 可表示数据；函数局部变量不参与存档。`presentation_scene` 与 `metadata` 是角色扩展点，默认表现层只显示 `portrait`。不包含剧情编辑器、编译缓存、rollback 或跨文件调用栈。
+`StoryPlayer.create_snapshot()` 与 `save_game()` 额外保存 `StoryPresentationState`：背景及淡入进度、立绘、语音播放位置、弹图、对话/旁白画面、行内游标、剩余等待时间和打字机的小数时间。原文及语言相同则从句中继续，不重复执行已经经过的音频或 `[save]`；翻译或文本变化时保留画面上下文，从新句开头显示。旧存档没有表现状态时仍从句首开始。缺失素材或损坏状态会在替换当前剧情前被拒绝。
+
+表现层使用单一帧时钟。`pause/resume` 同时控制文字、等待、淡入和语音，暂停期间不接受推进或选项输入。`auto_play` 配合 `auto_advance_delay` 自动推进；`fast_forward` 按 `fast_forward_multiplier` 加速。两者均不会自动替玩家选择选项。`advance_time(delta)` 可用于可重复测试；手动驱动时应禁用该节点的自动 `_process`。
+
+仅自动保存顶部普通 `var` 成员，值应为 JSON 可表示数据；函数局部变量不参与存档。`presentation_scene` 与 `metadata` 是角色扩展点，默认表现层只显示 `portrait`。不包含剧情编辑器、编译缓存、rollback 或跨文件调用栈。
 
 导出时选择 **Export all resources in the project**，并在非资源文件导出过滤器添加 `*.md`，确保库引用的 Markdown 和剧情动态引用的图片、声音一起打包。使用选定场景/资源导出模式时，还需显式包含这些动态依赖。
 

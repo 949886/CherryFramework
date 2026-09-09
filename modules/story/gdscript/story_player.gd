@@ -28,6 +28,7 @@ var _generation := 0
 func _ready() -> void:
 	if presenter != null:
 		presenter.setup(self)
+		presenter.presentation_failed.connect(func(message): story_failed.emit(message))
 	if autoplay and not initial_story.is_empty():
 		_start_initial.call_deferred()
 
@@ -61,6 +62,13 @@ func play(story_id: String, label: String = "", snapshot: Dictionary = {}, targe
 		var error := save_manager.restore_snapshot(next_vm, snapshot)
 		if error != OK:
 			return _fail(save_manager.last_restore_message, error)
+	var presentation_state: StoryPresentationState
+	if snapshot.has("presentation"):
+		if not snapshot.presentation is Dictionary:
+			return _fail("Invalid presentation snapshot.", ERR_INVALID_DATA)
+		presentation_state = StoryPresentationState.from_dict(snapshot.presentation)
+		if presentation_state == null or not presenter.can_restore(presentation_state):
+			return _fail("Invalid presentation state or missing saved assets.", ERR_INVALID_DATA)
 	stop()
 	vm = next_vm
 	locale = next_locale
@@ -68,6 +76,9 @@ func play(story_id: String, label: String = "", snapshot: Dictionary = {}, targe
 	program.runtime.set("__gal_host", self)
 	presenter.setup(self)
 	presenter.source_path = program.source_path
+	if presentation_state != null:
+		var same_text := String(snapshot.get("exact_signature", "")) == String(vm.current_instruction().get("exact_signature", ""))
+		presenter.restore_state(presentation_state, same_text and next_locale == String(snapshot.get("locale", "")))
 	is_playing = true
 	var generation := _generation
 	story_started.emit(story_id)
@@ -80,7 +91,8 @@ func restart() -> Error:
 	return play(initial_story)
 
 func save_game(automatic: bool = false) -> Error:
-	var error := save_manager.save_to_file(save_path, vm, locale)
+	var snapshot := create_snapshot()
+	var error := save_manager.write_snapshot(save_path, snapshot) if not snapshot.is_empty() else ERR_INVALID_DATA
 	if error != OK:
 		return _fail(save_manager.last_file_error, error)
 	saved.emit(automatic)
@@ -95,7 +107,30 @@ func load_game() -> Error:
 func switch_locale(next_locale: String) -> Error:
 	if vm.program == null:
 		return _fail("No active story to translate.", ERR_UNCONFIGURED)
-	return play(current_story_id, "", save_manager.create_snapshot(vm, locale), next_locale)
+	var snapshot := create_snapshot()
+	if snapshot.is_empty():
+		return _fail(save_manager.last_file_error, ERR_INVALID_DATA)
+	return play(current_story_id, "", snapshot, next_locale)
+
+func create_snapshot() -> Dictionary:
+	var snapshot := save_manager.create_snapshot(vm, locale)
+	if not snapshot.is_empty() and presenter != null:
+		snapshot["presentation"] = presenter.capture_state().to_dict()
+	return snapshot
+
+func pause() -> void:
+	if presenter != null:
+		presenter.paused = true
+
+func resume() -> void:
+	if presenter != null:
+		presenter.paused = false
+
+func set_auto_play(enabled: bool) -> void:
+	presenter.auto_play = enabled
+
+func set_fast_forward(enabled: bool) -> void:
+	presenter.fast_forward = enabled
 
 func _fail(message: String, error: Error) -> Error:
 	story_failed.emit(message)
@@ -104,6 +139,9 @@ func _fail(message: String, error: Error) -> Error:
 func _run_story_loop(generation: int) -> void:
 	var steps := 0
 	while generation == _generation and is_inside_tree():
+		if presenter.paused:
+			await get_tree().process_frame
+			continue
 		var instruction := vm.current_instruction()
 		instruction_changed.emit(instruction)
 		if generation != _generation:
