@@ -3,6 +3,7 @@ extends VBoxContainer
 ## Each open story owns a native CodeEdit and its undo history.
 const ProjectFiles = preload("story_project_files.gd")
 const StoryHighlighter = preload("story_syntax_highlighter.gd")
+const SyntaxPalette = preload("story_syntax_palette.gd")
 var files := ItemList.new()
 var filter := LineEdit.new()
 var title := Label.new()
@@ -90,6 +91,7 @@ func _init() -> void:
 func _ready() -> void:
 	EditorInterface.get_resource_filesystem().filesystem_changed.connect(refresh_files)
 	EditorInterface.get_editor_settings().settings_changed.connect(_refresh_editor_theme)
+	SyntaxPalette.THEME.changed.connect(_refresh_editor_theme)
 	refresh_files()
 	_restore_recovery()
 
@@ -183,7 +185,7 @@ func _apply_editor_theme(editor: CodeEdit) -> void:
 		editor.add_theme_font_size_override("font_size", roundi(float(settings.get_setting("interface/editor/code_font_size")) * EditorInterface.get_editor_scale()))
 	for color in ["font_color", "background_color", "current_line_color", "selection_color", "caret_color", "line_number_color"]:
 		var setting: String = "text_color" if color == "font_color" else color
-		editor.add_theme_color_override(color, settings.get_setting("text_editor/theme/highlighting/" + setting))
+		editor.add_theme_color_override(color, SyntaxPalette.get_color(setting))
 	if editor.syntax_highlighter != null:
 		editor.syntax_highlighter.update_cache()
 

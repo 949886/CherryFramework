@@ -5,6 +5,7 @@ extends RefCounted
 const THEME = preload("story_syntax_palette.tres")
 const SETTINGS_PREFIX := "text_editor/theme/highlighting/"
 const SETTING_ROLES := {
+	"text_color": &"text",
 	"keyword_color": &"keyword",
 	"control_flow_keyword_color": &"keyword",
 	"function_color": &"function",
