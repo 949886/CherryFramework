@@ -1,5 +1,23 @@
 @tool
 extends RefCounted
+## Source browser includes unreferenced stories; export discovery remains separate.
+static func source_paths(directory: String = "res://") -> PackedStringArray:
+	var result := PackedStringArray()
+	if FileAccess.file_exists(directory.path_join(".gdignore")):
+		return result
+	var access := DirAccess.open(directory)
+	if access == null:
+		return result
+	for file in access.get_files():
+		var path := directory.path_join(file)
+		if MarkdownStory.supports_path(path):
+			result.append(path)
+	for child in access.get_directories():
+		if not child.begins_with(".") and not access.is_link(child):
+			result.append_array(source_paths(directory.path_join(child)))
+	result.sort()
+	return result
+
 ## Discover referenced Story resources; documentation Markdown is not an entry.
 
 static func stories(roots: PackedStringArray = []) -> Array[Story]:

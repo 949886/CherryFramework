@@ -4,7 +4,7 @@ extends PluginModule
 ## Markdown story runtime shared by standard and .NET Godot projects.
 
 const MODULE_ID := &"story"
-const CheckPanel = preload("editor/story_check_panel.gd")
+const EditorScreen = preload("editor/story_editor.gd")
 const Inspector = preload("editor/story_inspector_plugin.gd")
 const Exporter = preload("editor/story_export_plugin.gd")
 const LegacyImports = preload("editor/legacy_story_imports.gd")
@@ -15,11 +15,13 @@ var _exporter: EditorExportPlugin
 
 func on_plugin_enter_tree() -> void:
 	_refresh_sources.call_deferred(LegacyImports.migrate())
-	_panel = CheckPanel.new()
-	plugin.add_control_to_bottom_panel(_panel, "Story")
+	_panel = EditorScreen.new()
+	EditorInterface.get_editor_main_screen().add_child(_panel)
+	_panel.hide()
 	plugin.add_tool_menu_item("Cherry: Check Stories", _check_all)
 	_inspector = Inspector.new()
 	_inspector.check_requested.connect(_check_story)
+	_inspector.edit_requested.connect(edit_story)
 	plugin.add_inspector_plugin(_inspector)
 	_exporter = Exporter.new()
 	plugin.add_export_plugin(_exporter)
@@ -28,7 +30,7 @@ func on_plugin_exit_tree() -> void:
 	plugin.remove_tool_menu_item("Cherry: Check Stories")
 	plugin.remove_inspector_plugin(_inspector)
 	plugin.remove_export_plugin(_exporter)
-	plugin.remove_control_from_bottom_panel(_panel)
+	_panel.store_recovery()
 	_panel.queue_free()
 	_panel = null
 	_inspector = null
@@ -42,11 +44,26 @@ func _refresh_sources(paths: PackedStringArray) -> void:
 
 func _check_all() -> void:
 	_panel.check_all()
-	plugin.make_bottom_panel_item_visible(_panel)
+	EditorInterface.set_main_screen_editor("Story")
 
 func _check_story(story: Story) -> void:
 	_panel.check_story(story)
-	plugin.make_bottom_panel_item_visible(_panel)
+	EditorInterface.set_main_screen_editor("Story")
+
+func edit_story(story: Story) -> void:
+	if _panel != null and story != null:
+		_panel.open_path(story.source_file if story is MarkdownStory else story.get_source_path())
+		EditorInterface.set_main_screen_editor("Story")
+
+func make_visible(visible: bool) -> void:
+	if _panel != null:
+		_panel.visible = visible
+
+func save_all() -> bool:
+	return _panel.save_all() if _panel != null else true
+
+func unsaved_status() -> String:
+	return "\n".join(_panel.unsaved_files()) if _panel != null else ""
 
 func get_module_id() -> StringName:
 	return MODULE_ID

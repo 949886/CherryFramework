@@ -12,6 +12,10 @@ func _enter_tree() -> void:
         module.on_plugin_enter_tree()
     set_process(true)
     set_physics_process(true)
+    # Water remains a canvas tool when Cherry also provides a main screen.
+    set_input_event_forwarding_always_enabled()
+    set_force_draw_over_forwarding_enabled()
+    EditorInterface.get_selection().selection_changed.connect(_water_selection_changed)
 
 func _ready() -> void:
     for module: PluginModule in _modules:
@@ -26,6 +30,7 @@ func _physics_process(delta: float) -> void:
         module.on_plugin_physics_process(delta)
 
 func _exit_tree() -> void:
+    EditorInterface.get_selection().selection_changed.disconnect(_water_selection_changed)
     for index: int in range(_modules.size() - 1, -1, -1):
         _modules[index].on_plugin_exit_tree()
     _modules.clear()
@@ -64,22 +69,52 @@ func get_modules() -> Array[PluginModule]:
     return _modules.duplicate()
 
 func _handles(object: Object) -> bool:
-    return object is CherryWater2D
+    return object is Story
 
 func _edit(object: Object) -> void:
-    var water_module:=get_module(&"2d.water") as WaterModule
-    if water_module!=null:
-        water_module.edit_water(object)
+    if object is Story:
+        var story_module := get_module(StoryModule.MODULE_ID) as StoryModule
+        if story_module != null:
+            story_module.edit_story(object)
 
 func _make_visible(visible: bool) -> void:
-    if not visible:
-        _edit(null)
+    var story_module := get_module(StoryModule.MODULE_ID) as StoryModule
+    if story_module != null:
+        story_module.make_visible(visible)
+
+func _has_main_screen() -> bool:
+    return true
+
+func _get_plugin_name() -> String:
+    return "Story"
+
+func _get_plugin_icon() -> Texture2D:
+    return EditorInterface.get_editor_theme().get_icon("TextFile", "EditorIcons")
+
+func _save_external_data() -> void:
+    var story_module := get_module(StoryModule.MODULE_ID) as StoryModule
+    if story_module != null:
+        story_module.save_all()
+
+func _get_unsaved_status(for_scene: String) -> String:
+    var story_module := get_module(StoryModule.MODULE_ID) as StoryModule
+    return story_module.unsaved_status() if for_scene.is_empty() and story_module != null else ""
+
+func _build() -> bool:
+    var story_module := get_module(StoryModule.MODULE_ID) as StoryModule
+    return story_module.save_all() if story_module != null else true
+
+func _water_selection_changed() -> void:
+    var water_module := get_module(WaterModule.MODULE_ID) as WaterModule
+    if water_module != null:
+        var nodes := EditorInterface.get_selection().get_selected_nodes()
+        water_module.edit_water(nodes[0] if nodes.size() == 1 else null)
 
 func _forward_canvas_gui_input(event: InputEvent) -> bool:
     var water_module:=get_module(&"2d.water") as WaterModule
     return water_module.handle_input(event) if water_module!=null else false
 
-func _forward_canvas_draw_over_viewport(overlay: Control) -> void:
+func _forward_canvas_force_draw_over_viewport(overlay: Control) -> void:
     var water_module:=get_module(&"2d.water") as WaterModule
     if water_module!=null:
         water_module.draw_handles(overlay)
