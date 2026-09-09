@@ -113,7 +113,13 @@ player.restored.connect(func(_quality): print(player.save_manager.restore_qualit
 
 表现层使用单一帧时钟。`pause/resume` 同时控制文字、等待、淡入和语音，暂停期间不接受推进或选项输入。`auto_play` 配合 `auto_advance_delay` 自动推进；`fast_forward` 按 `fast_forward_multiplier` 加速。两者均不会自动替玩家选择选项。`advance_time(delta)` 可用于可重复测试；手动驱动时应禁用该节点的自动 `_process`。
 
-仅自动保存顶部普通 `var` 成员，值应为 JSON 可表示数据；函数局部变量不参与存档。`presentation_scene` 与 `metadata` 是角色扩展点，默认表现层只显示 `portrait`。不包含剧情编辑器、编译缓存、rollback 或跨文件调用栈。
+仅自动保存顶部普通 `var` 成员，值应为 JSON 可表示数据；函数局部变量不参与存档。`presentation_scene` 与 `metadata` 是角色扩展点，默认表现层只显示 `portrait`。不包含可视化剧情编写器、rollback 或跨文件调用栈。
+
+## 编译缓存
+
+`StoryLibrary` 默认开启内存缓存，`cache_capacity` 默认 64 个编译结果，按最近使用顺序淘汰。缓存键包含源码 SHA-256、源路径、剧情 ID、路径映射和 `StoryParser.COMPILER_VERSION`，不依赖文件时间戳。`cache_enabled=false` 可关闭，`clear_cache()` 可显式清空。
+
+缓存只保留无运行时实例的模板；每次播放深拷贝 IR 并创建新的剧情实例。作者 `_init()` 每次播放执行一次，模板编译不执行它。编译后的 `runtime_script` 会共享，应视为只读；实例变量与数组、字典不会共享。`program_cache.hits/misses/compilations` 可用于观察命中情况，失败结果不会缓存。
 
 导出时选择 **Export all resources in the project**，并在非资源文件导出过滤器添加 `*.md`，确保库引用的 Markdown 和剧情动态引用的图片、声音一起打包。使用选定场景/资源导出模式时，还需显式包含这些动态依赖。
 

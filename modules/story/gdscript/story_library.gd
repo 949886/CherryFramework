@@ -6,6 +6,10 @@ extends Resource
 @export var stories: Dictionary = {}
 @export var fallback_locales: PackedStringArray = []
 @export var locale_labels: Dictionary = {}
+@export var cache_enabled := true
+@export_range(0, 1024) var cache_capacity := 64
+
+var program_cache := StoryProgramCache.new()
 
 func resolve_path(story_id: String, locale: String) -> String:
 	var variants: Dictionary = stories.get(story_id, {})
@@ -25,9 +29,11 @@ func resolve_path(story_id: String, locale: String) -> String:
 
 func compile_story(story_id: String, locale: String) -> StoryProgram:
 	var path := resolve_path(story_id, locale)
-	var parser := StoryParser.new()
-	parser.story_aliases = get_story_aliases()
-	return parser.compile_file(path, story_id) if not path.is_empty() else null
+	program_cache.capacity = cache_capacity
+	return program_cache.compile_file(path, story_id, get_story_aliases(), cache_enabled) if not path.is_empty() else null
+
+func clear_cache() -> void:
+	program_cache.clear()
 
 func get_story_aliases() -> Dictionary:
 	var aliases := {}

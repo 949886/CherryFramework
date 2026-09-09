@@ -102,12 +102,10 @@ func create_runtime(host: Object = null) -> Error:
 	## A single runtime object is kept for the whole story file, so top-level
 	## fields such as `tire` and `mahiro_favorability` are shared by every JIF
 	## and EXE thunk generated from that story.
-	runtime_script = GDScript.new()
-	runtime_script.source_code = generated_gdscript_source
-	var err := runtime_script.reload()
-	if err != OK:
-		push_error("Generated GDScript failed to compile for %s (error %s).\n%s" % [story_id, err, generated_gdscript_source])
-		return err
+	if runtime_script == null:
+		var error := compile_script()
+		if error != OK:
+			return error
 
 	if not runtime_script.can_instantiate():
 		push_error("Generated GDScript cannot be instantiated for story: %s" % story_id)
@@ -122,6 +120,30 @@ func create_runtime(host: Object = null) -> Error:
 	if runtime.get("__gal_host") != null or _script_has_property("__gal_host"):
 		runtime.set("__gal_host", host)
 	return OK
+
+
+## Compile without creating an instance. Cache templates never run author _init.
+func compile_script() -> Error:
+	var script := GDScript.new()
+	script.source_code = generated_gdscript_source
+	var error := script.reload()
+	if error == OK:
+		runtime_script = script
+	return error
+
+
+## Reuse the compiled script, while copying mutable IR and allocating fresh fields.
+func instantiate_program(host: Object = null) -> StoryProgram:
+	var instance := StoryProgram.new()
+	instance.story_id = story_id
+	instance.source_path = source_path
+	instance.instructions = instructions.duplicate(true)
+	instance.sid_to_ip = sid_to_ip.duplicate(true)
+	instance.labels = labels.duplicate(true)
+	instance.generated_gdscript_source = generated_gdscript_source
+	instance.save_variables = save_variables.duplicate()
+	instance.runtime_script = runtime_script
+	return instance if instance.create_runtime(host) == OK else null
 
 
 func _script_has_property(property_name: String) -> bool:

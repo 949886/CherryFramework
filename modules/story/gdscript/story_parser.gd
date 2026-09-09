@@ -46,6 +46,8 @@ var report_errors := true
 var diagnostics: Array[Dictionary] = []
 
 const STORY_TAB_WIDTH := 4
+## Bump when lowering, generated code or program metadata semantics change.
+const COMPILER_VERSION := "2"
 
 
 func compile_file(path: String, story_id: String) -> StoryProgram:
@@ -61,7 +63,7 @@ func compile_file(path: String, story_id: String) -> StoryProgram:
 
 
 ## Compiles in-memory source using the same pipeline as Markdown files.
-func compile_source(source: String, story_id: String, path: String = "") -> StoryProgram:
+func compile_source(source: String, story_id: String, path: String = "", instantiate: bool = true) -> StoryProgram:
 	_reset()
 	_program = StoryProgram.new()
 	_program.story_id = story_id
@@ -87,10 +89,12 @@ func compile_source(source: String, story_id: String, path: String = "") -> Stor
 		_print_errors(path)
 		return null
 
-	var err := _program.create_runtime(null)
+	var err := _program.compile_script()
 	if err != OK:
 		_errors.append("Generated GDScript could not compile (error %d)." % err)
 		_print_errors(path)
+		return null
+	if instantiate and _program.create_runtime(null) != OK:
 		return null
 	return _program
 
