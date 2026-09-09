@@ -25,4 +25,17 @@ func resolve_path(story_id: String, locale: String) -> String:
 
 func compile_story(story_id: String, locale: String) -> StoryProgram:
 	var path := resolve_path(story_id, locale)
-	return StoryParser.new().compile_file(path, story_id) if not path.is_empty() else null
+	var parser := StoryParser.new()
+	parser.story_aliases = get_story_aliases()
+	return parser.compile_file(path, story_id) if not path.is_empty() else null
+
+func get_story_aliases() -> Dictionary:
+	var aliases := {}
+	for story_id in stories:
+		if not stories[story_id] is Dictionary:
+			continue
+		for value in stories[story_id].values():
+			if value is String and not value.is_empty():
+				var path: String = value if value.is_absolute_path() else resource_path.get_base_dir().path_join(value).simplify_path()
+				aliases[path] = story_id
+	return aliases

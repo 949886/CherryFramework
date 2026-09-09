@@ -39,13 +39,21 @@ var _pending_sid: String = ""
 var _errors: Array[String] = []
 var _current_source_line: int = 0
 
+## Absolute localized file path -> logical story ID, supplied by StoryLibrary.
+## No locale suffix is guessed: dots are legal parts of a story ID.
+var story_aliases: Dictionary = {}
+var report_errors := true
+var diagnostics: Array[Dictionary] = []
+
 const STORY_TAB_WIDTH := 4
 
 
 func compile_file(path: String, story_id: String) -> StoryProgram:
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
-		push_error("Cannot open story: %s" % path)
+		_reset()
+		_errors.append("Cannot open story: %s" % path)
+		_print_errors(path)
 		return null
 	var source := file.get_as_text()
 	file.close()
@@ -64,7 +72,9 @@ func compile_source(source: String, story_id: String, path: String = "") -> Stor
 		_print_errors(path)
 		return null
 
-	_parse_sequence(0, 0)
+	var consumed := _parse_sequence(0, 0)
+	if consumed < _lines.size():
+		_errors.append("line %d: unconsumed story content" % int(_lines[consumed]["line"]))
 
 	# A program always ends explicitly.  END also makes malformed fall-through
 	# easier to inspect in a debugger.
@@ -79,6 +89,8 @@ func compile_source(source: String, story_id: String, path: String = "") -> Stor
 
 	var err := _program.create_runtime(null)
 	if err != OK:
+		_errors.append("Generated GDScript could not compile (error %d)." % err)
+		_print_errors(path)
 		return null
 	return _program
 
@@ -94,6 +106,7 @@ func _reset() -> void:
 	_auto_sid_occurrences.clear()
 	_pending_sid = ""
 	_errors.clear()
+	diagnostics.clear()
 	_current_source_line = 0
 
 
@@ -184,6 +197,8 @@ func _parse_sequence(start_index: int, indent: int) -> int:
 			continue
 
 		if _is_sid_comment(text):
+			if not _pending_sid.is_empty():
+				_errors.append("line %d: SID '%s' has no following event" % [_current_source_line, _pending_sid])
 			_pending_sid = _parse_sid_comment(text)
 			i += 1
 			continue
@@ -192,13 +207,17 @@ func _parse_sequence(start_index: int, indent: int) -> int:
 			var label := text.substr(2).strip_edges()
 			if label.is_empty():
 				_errors.append("line %d: empty heading" % _current_source_line)
+			elif _program.labels.has(label):
+				_errors.append("line %d: duplicate heading '%s'" % [_current_source_line, label])
 			else:
 				_program.labels[label] = _program.instructions.size()
 			i += 1
 			continue
 
 		if _is_control_code(text, "elif") or _is_else_code(text):
-			break
+			_errors.append("line %d: orphan elif/else; expected a matching if at this indentation" % _current_source_line)
+			i += 1
+			continue
 
 		if _is_control_code(text, "if"):
 			i = _parse_if(i, indent)
@@ -405,10 +424,16 @@ func _compile_story_jump(text: String) -> void:
 		address["label"] = destination.substr(2)
 	elif destination.begins_with("#"):
 		address["label"] = destination.substr(1)
-	elif destination.ends_with(".md"):
-		address["story"] = _story_id_from_filename(destination.get_file())
 	else:
-		_errors.append("line %d: jump target must be ##heading or *.md" % _current_source_line)
+		var file_target := destination.get_slice("#", 0)
+		if not file_target.ends_with(".md") or file_target == ".md":
+			_errors.append("line %d: jump target must be ##heading or story.md[#heading]" % _current_source_line)
+			return
+		address["story"] = _story_id_from_filename(file_target)
+		if destination.contains("#"):
+			address["label"] = destination.substr(destination.find("#") + 1).trim_prefix("#")
+	if destination.ends_with("#") or destination == "##":
+		_errors.append("line %d: jump heading cannot be empty" % _current_source_line)
 		return
 
 	_emit(StoryProgram.Op.JMP, address, "jump|%s" % destination)
@@ -615,12 +640,8 @@ func _parse_sid_comment(text: String) -> String:
 
 
 func _story_id_from_filename(filename: String) -> String:
-	var base := filename.trim_suffix(".md")
-	var parts := base.split(".")
-	# `mahiro_h.ja.md` or `mahiro_h.zh-cn.md` -> `mahiro_h`.
-	if parts.size() >= 2:
-		return String(parts[0])
-	return base
+	var path := filename if filename.is_absolute_path() else _program.source_path.get_base_dir().path_join(filename).simplify_path()
+	return String(story_aliases.get(path, filename.trim_suffix(".md").trim_prefix("./")))
 
 
 func _story_indent_columns(text: String) -> int:
@@ -680,5 +701,18 @@ func _leading_whitespace_length(text: String) -> int:
 
 
 func _print_errors(path: String) -> void:
+	diagnostics.clear()
+	var line_pattern := RegEx.new()
+	line_pattern.compile("^line ([0-9]+): (.*)$")
 	for error_message in _errors:
-		push_error("%s: %s" % [path, error_message])
+		var match_result := line_pattern.search(error_message)
+		diagnostics.append({
+			"path": path,
+			"line": int(match_result.get_string(1)) if match_result != null else 1,
+			"column": 1,
+			"severity": "error",
+			"code": "story_parse_error",
+			"message": match_result.get_string(2) if match_result != null else error_message,
+		})
+		if report_errors:
+			push_error("%s: %s" % [path, error_message])

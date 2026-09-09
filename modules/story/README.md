@@ -78,6 +78,7 @@ player.restored.connect(func(_quality): print(player.save_manager.restore_qualit
 - `姓名@状态: 台词`、`> 旁白`、缩进选项 `- 选项`。
 - 反引号包围的 `if 条件:`、`elif 条件:`、`else:`，支持空格或 Tab 缩进。
 - `# 标题`；`>>[说明](##标题)` 本地跳转，`>>[说明](chapter2.md)` 跳转到库中的 `chapter2`。
+- 支持 `chapter.one.md#第二节`；点号属于剧情 ID。引用实际的本地化文件名时，通过 `StoryLibrary` 的路径映射解析，不猜测语言后缀。
 - `<!-- @sid:稳定标识 -->`：可选的恢复锚点，建议对应翻译使用同一 SID。
 - `**粗体**`；`[audio:路径]`、`[wait:3s]`、`[wait:50ms]`、`[i]`、`[save]`。
 - `![transition: fadein](路径)` 背景淡入；`![popup](路径)` 弹图并等待输入。
@@ -97,6 +98,8 @@ player.restored.connect(func(_quality): print(player.save_manager.restore_qualit
 导出时选择 **Export all resources in the project**，并在非资源文件导出过滤器添加 `*.md`，确保库引用的 Markdown 和剧情动态引用的图片、声音一起打包。使用选定场景/资源导出模式时，还需显式包含这些动态依赖。
 
 ## 验证
+
+解析器会拒绝孤立 `else/elif`、重复标题、异常缩进和被覆盖的 SID。`parser.diagnostics` 返回路径、行、列、严重程度、错误码和消息；`report_errors=false` 可由宿主统一展示这些诊断。
 
 首次使用先让 Godot 完成资源扫描，再从项目根目录执行：
 
