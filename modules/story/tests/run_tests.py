@@ -158,11 +158,13 @@ extra_files = PackedStringArray("res://runtime_config.json")
 [ext_resource type="PackedScene" path="res://{module_path}/examples/story_demo.tscn" id="2"]
 [ext_resource type="Resource" path="res://export_entry.tres" id="3"]
 [ext_resource type="Resource" path="res://copy.ja.story" id="4"]
+[ext_resource type="PackedScene" path="res://{module_path}/examples/galgame_demo.tscn" id="5"]
 [node name="ExportProbe" type="Node"]
 script = ExtResource("1")
 metadata/demo = ExtResource("2")
 metadata/entry = ExtResource("3")
 metadata/story_format = ExtResource("4")
+metadata/galgame = ExtResource("5")
 ''', encoding='utf-8')
         (project / 'export_presets.cfg').write_text('''[preset.0]
 name="Story"

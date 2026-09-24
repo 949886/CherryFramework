@@ -38,6 +38,8 @@ func rebuild() -> void:
 		theme.set_color("font_color", type, colors.ink)
 		theme.set_color("font_hover_color", type, colors.accent)
 		theme.set_color("font_pressed_color", type, colors.accent)
+		theme.set_color("font_focus_color", type, colors.accent)
+		theme.set_color("font_hover_pressed_color", type, colors.accent)
 		theme.set_color("font_disabled_color", type, colors.muted)
 	for type in ["Button", "OptionButton", "LineEdit"]:
 		theme.set_stylebox("normal", type, box(colors.paper, colors.line, 8, 12))

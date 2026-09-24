@@ -262,6 +262,7 @@ func _settings_changed(key: String) -> void:
 	character_delay = 0.0 if preferences.values.instant else 1.0 / float(preferences.values.speed)
 	auto_advance_delay = float(preferences.values.auto_delay)
 	fast_forward_multiplier = float(preferences.values.skip_speed)
+	if not preferences.values.skip_unread and not _line_read: fast_forward = false
 	background_fade_duration = 0.0 if preferences.values.motion == "reduced" else 0.6
 	for pair in [["Master", "master"], ["Voice", "voice"], ["Music", "music"], ["Effects", "effects"]]:
 		AudioServer.set_bus_volume_linear(AudioServer.get_bus_index(pair[0]), float(preferences.values[pair[1]]) / 100.0)
@@ -307,7 +308,7 @@ func open_menu(page: String) -> void:
 	menu.open(page)
 
 func close_menu() -> void:
-	menu.hide()
+	menu.close()
 	replay_player.stop()
 	paused = _focus_paused
 
@@ -315,11 +316,17 @@ func _capture_thumbnail() -> void:
 	if DisplayServer.get_name() == "headless": return
 	var picture := get_viewport().get_texture().get_image()
 	if picture == null or picture.is_empty(): return
-	var bounds := Rect2i(stage.get_global_rect())
+	var bounds := stage_pixel_rect()
 	bounds = bounds.intersection(Rect2i(Vector2i.ZERO, picture.get_size()))
 	if bounds.has_area(): picture = picture.get_region(bounds)
 	picture.resize(320, 180, Image.INTERPOLATE_LANCZOS)
 	thumbnail = picture.save_jpg_to_buffer(0.8)
+
+func stage_pixel_rect() -> Rect2i:
+	# Screenshot textures use physical viewport pixels. canvas_items stretch can
+	# differ from logical Control coordinates at non-default window resolutions.
+	var transform := get_viewport().get_stretch_transform() * stage.get_global_transform_with_canvas()
+	return Rect2i(transform * Rect2(Vector2.ZERO, stage.size))
 
 func _lose_focus() -> void:
 	if _initialized and preferences.values.pause_blur and not paused:
@@ -354,3 +361,10 @@ func _input(event: InputEvent) -> void:
 	if menu.visible or ui_hidden: return
 	if event is InputEventKey and not preferences.values.keyboard: return
 	super._input(event)
+
+func _pointer_is_over_button() -> bool:
+	var current: Node = get_viewport().gui_get_hovered_control()
+	while current != null:
+		if current is BaseButton or current is Range: return true
+		current = current.get_parent()
+	return false

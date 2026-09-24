@@ -1,0 +1,76 @@
+# Galgame presenter
+
+打开 `examples/galgame_demo.tscn`，按 F6 运行。Ronava 项目也把它设为了 F5 的启动场景。
+首次打开项目需等待 Godot 完成资源扫描。基础 `story_demo.tscn` 保留用于调试核心播放器。
+
+## 界面与操作
+
+画面统一绘制在 1280 × 720 的设计画布，再等比适配窗口。其他宽高比留边；
+菜单与正文共用这块画布。选项底部相对对话框顶部保持 28 个设计像素的距离。
+长选项列表和长正文可滚动。正文默认黑体、23 px、1.5 倍行距，标题和装饰文字使用衬线体。
+
+底栏提供回顾、自动、存档、读档、隐藏、流程图、快进和设置。
+空格、Enter、F 或左键推进；Esc 返回；A 自动、Ctrl 切换快进、H 隐藏、
+S 存档、L 读档、B 回顾、M 流程图。隐藏界面后单击恢复。
+菜单、确认框和隐藏状态会隔离剧情输入；失去焦点时默认暂停。
+
+存档和读档分为两个页面，各有 4 页、每页 6 个栏位。存档带实际画面缩略图和文本摘要。
+选择出现时默认写入独立自动存档，不占用手动栏位。覆盖和读取默认需要确认。
+损坏文件不会替换正在播放的进度。回顾连续滚动，包含对白、旁白和选择，并可重播已有语音。
+
+设置分为文字样式、阅读播放、声音、画面与界面、操作与存档。
+文字、阅读、画面子页内显示实际对白组件的缩小预览；声音和操作子页没有预览。
+六套清新配色、原始奶油色、暮夜和系统配色共用主题令牌。
+毛玻璃开关位于界面动效之后；只有启用时显示模糊、底色浓度和饱和度。没有边缘光。
+
+## 资源和配置
+
+| 文件 / 类 | 定制内容 |
+| --- | --- |
+| `examples/galgame/entry.tres` | `StoryPlayer.story` 的入口；`extra_files` 声明动态读取的 JSON |
+| `examples/galgame/stories/` | 八个实际剧本，三条分支在 evening 文件汇合，再通向两个结局 |
+| `examples/galgame/catalog.json` | 以剧本 ID 为键的标题、章节、摘要和结局标记；不定义连线 |
+| `examples/galgame/mahiro.tres` | 角色名、ID、普通和 happy 差分；脚本用 `真尋@happy:` 切换 |
+| `resources/galgame_settings.json` | 默认值、范围、条件显示、分类、槽位数量与配色 |
+| `StorySkin` / `StoryDialogueBox` | 字体和主题令牌、实际对话框与预览共享的组件 |
+| `StoryGalgamePresenter` | 舞台、剧情表现、键盘、音频与菜单暂停；复用原有 StoryPresenter 状态机 |
+| `StoryGalgameMenus` / `StoryFlowView` | 页面控件和流程图交互 |
+| `StoryArchive` / `StoryLibrary` | 校验后的快照、回顾、已读进度、书签与真实文件图 |
+
+自定义实例可在 presenter Inspector 配置 `characters`、`backdrop`、`catalog_path`、
+`game_title`、`footer_caption` 和独立的 `save_directory`。字体使用系统字体回退；
+需要跨设备固定字形时，在 `StorySkin` 中改用项目内的 FontFile 资源。
+Godot 的字距为整数像素，因此界面中的半像素字距会在渲染时取整。
+
+语音使用脚本的 `[audio:相对路径]`，背景音乐和点击音效分别通过
+`music_stream` / `effect_stream` 配置。示例提供语音演示资源，未提供背景音乐和点击音效素材。
+音量分别控制 Master、Voice、Music、Effects 总线；对白播放时可自动压低音乐。
+自动推进可等待语音结束；默认快进只经过已读内容。
+
+## 流程图与存储
+
+流程图遍历入口能到达的跨文件 JMP。一个文件身份只产生一个节点，本地标题和翻译文件不重复。
+图支持分支、汇合、循环、拖动、缩放、全图适配、小地图、搜索、章节筛选和书签。
+当前文件、已访问文件、相邻未读文件和未解锁文件分别显示；未解锁节点隐藏标题与文件名。
+重读从该文件首次出现可见剧情时保存的快照开始，恢复当时变量和画面，先征求确认。
+
+默认存储目录为 `user://cherry_galgame`：`settings.cfg` 保存设置，`profile.cfg` 保存
+终身已读进度、文件入口快照和书签，`slot_01.json` 到 `slot_24.json` 保存手动存档，
+`automatic.json` 保存自动存档。读档不回滚设置或终身已读记录。
+文本改动后，其精确签名变化，改动的片段重新视为未读。回顾最多保存最近 500 条。
+
+## 导出与验证
+
+场景同时引用 `runtime_dependencies.tres` 和 `galgame_dependencies.tres`，确保选定场景导出
+包含运行时脚本及毛玻璃着色器。入口的 `extra_files` 包含设置 schema 和剧本说明目录。
+导出时启用 Cherry 插件，使 Markdown 跳转、命令中的图像和音频依赖自动进入 PCK。
+
+在模块目录外运行：
+
+```text
+python addons/cherry/modules/story/tests/run_tests.py --godot <Godot可执行文件>
+```
+
+测试使用独立的临时项目和用户目录，覆盖模型、真实原生菜单、多分辨率、分支结局及
+从独立 PCK 启动。窗口渲染检查使用 `galgame_ui_test.gd -- --render`，截图由 Godot
+Viewport 直接输出到测试用户目录，包含实际设置预览、毛玻璃和 4 种窗口尺寸。

@@ -19,6 +19,9 @@ var toast: PanelContainer
 var _toast_generation := 0
 var _preview_clock := 0.0
 var _preview_fit: Callable
+var _stage_focus: Dictionary = {}
+var _sheet_focus: Dictionary = {}
+var _opening: Tween
 
 func configure(owner_presenter: StoryGalgamePresenter) -> void:
 	presenter = owner_presenter
@@ -66,10 +69,20 @@ func configure(owner_presenter: StoryGalgamePresenter) -> void:
 	hide()
 
 func open(target: String) -> void:
+	if not visible:
+		for node in [presenter.chrome, presenter.choice_scroll, presenter.dialogue, presenter.narration]:
+			_suspend_focus(node, _stage_focus)
+		get_viewport().gui_release_focus()
 	page = target
 	heading.text = {"settings": "设置", "save": "存档", "load": "读档", "backlog": "回顾", "flow": "流程图", "ending": "故事的余韵"}.get(page, page)
 	_clear_body()
 	show()
+	if _opening != null: _opening.kill()
+	modulate.a = 1.0
+	if presenter.preferences.values.motion != "reduced":
+		modulate.a = 0.0
+		_opening = create_tween()
+		_opening.tween_property(self, "modulate:a", 1.0, 0.16)
 	match page:
 		"settings": _settings()
 		"save", "load": _slots()
@@ -92,12 +105,31 @@ func _clear_body() -> void:
 		body.remove_child(child)
 		child.queue_free()
 
-func _focus_first(node: Node) -> void:
-	if not is_instance_valid(node) or not visible: return
+func _focus_first(node: Node) -> bool:
+	if not is_instance_valid(node) or not visible: return false
 	for child in node.get_children():
-		if child is BaseButton and child.is_visible_in_tree() and not child.disabled:
+		if child is BaseButton and child.is_visible_in_tree() and not child.disabled and child.focus_mode != Control.FOCUS_NONE:
 			child.grab_focus()
-			return
+			return true
+		if _focus_first(child): return true
+	return false
+
+func _suspend_focus(node: Node, saved: Dictionary) -> void:
+	if node is Control and node.focus_mode != Control.FOCUS_NONE:
+		saved[node] = node.focus_mode
+		node.focus_mode = Control.FOCUS_NONE
+	for child in node.get_children(): _suspend_focus(child, saved)
+
+func _restore_focus(saved: Dictionary) -> void:
+	for node in saved:
+		if is_instance_valid(node): node.focus_mode = saved[node]
+	saved.clear()
+
+func close() -> void:
+	dismiss_confirmation()
+	hide()
+	_restore_focus(_stage_focus)
+	get_viewport().gui_release_focus()
 
 func update_skin(key: String) -> void:
 	theme = skin.theme
@@ -240,6 +272,7 @@ func _setting_row(parent: VBoxContainer, field: Dictionary) -> void:
 			slider.step = field.step
 			slider.value = value
 			slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			row.add_child(slider)
 			var number := skin.label(str(value) + " " + field.get("unit", ""), 14, "muted")
 			number.custom_minimum_size.x = 92
@@ -419,6 +452,7 @@ func _replay_current_voice() -> void:
 
 func confirm(title: String, message: String, action: Callable) -> void:
 	dismiss_confirmation()
+	_suspend_focus(sheet, _sheet_focus)
 	confirmation = Control.new()
 	confirmation.size = size
 	add_child(confirmation)
@@ -454,6 +488,7 @@ func dismiss_confirmation() -> bool:
 	remove_child(confirmation)
 	confirmation.queue_free()
 	confirmation = null
+	_restore_focus(_sheet_focus)
 	return true
 
 func notify_user(message: String) -> void:

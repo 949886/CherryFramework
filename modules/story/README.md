@@ -4,6 +4,11 @@ Godot 4 的 Markdown 剧情模块。入口是一个 `Story` 资源；当前实�
 
 ## 开始使用
 
+完整 galgame 界面请打开 `examples/galgame_demo.tscn` 按 F6；包含 16:9 舞台、
+24 栏位存读档、回顾、五类设置和以剧本文件为单位的流程图。
+定制入口、存档目录、配色与资源见 [Galgame presenter 接入说明](docs/GALGAME_PRESENTER.md)。
+下方的 `story_demo.tscn` 保留为基础播放器和多语言调试示例。
+
 1. 在「项目 → 项目设置 → 插件」启用 Cherry。本次从导入器升级为原生资源格式，保存工作后重启一次 Godot，让原生格式加载器注册并重新扫描文件。
 2. 打开 `examples/story_demo.tscn`，按 F6 体验。示例直接引用 `examples/stories/mahiro.ja.md`。
 3. 自建场景时，实例化 `scenes/story_presenter.tscn`，添加挂载 `StoryPlayer` 脚本的 Node，在 Inspector 中连接 `presenter`，把入口 `.md` 拖到 `story`，然后保存场景。

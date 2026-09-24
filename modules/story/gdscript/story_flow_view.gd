@@ -141,7 +141,14 @@ func _select(identity: String) -> void:
 		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		image.custom_minimum_size = Vector2(300, 126)
+		image.clip_contents = true
 		details.add_child(image)
+		var snapshot: Dictionary = presenter.archive.progress.get(identity, {}).get("entry", {})
+		var visual: Dictionary = snapshot.get("presentation", {})
+		var portrait_path := String(visual.get("portrait_path", ""))
+		if not portrait_path.is_empty() and ResourceLoader.exists(portrait_path):
+			var portrait := presenter._texture(image, load(portrait_path) as Texture2D, Rect2(0, 4, 156, 265))
+			portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		details.add_child(_wrapped(node.summary, 16))
 		details.add_child(_wrapped(node.source.get_file(), 13))
 		var read_count := int(presenter.archive.progress.get(identity, {}).get("read", {}).size())

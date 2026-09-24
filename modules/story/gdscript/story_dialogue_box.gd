@@ -38,7 +38,9 @@ func _init() -> void:
 	text.bbcode_enabled = true
 	text.custom_minimum_size = Vector2(0, 100)
 	text.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Long narration remains scrollable; the presenter excludes scrollbar clicks
+	# from its advance gesture while ordinary clicks still advance the story.
+	text.mouse_filter = Control.MOUSE_FILTER_PASS
 	content.add_child(text)
 	voice = Label.new()
 	voice.text = "▥  MAHIRO"

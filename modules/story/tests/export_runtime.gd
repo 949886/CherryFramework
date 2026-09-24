@@ -2,6 +2,7 @@ extends Node
 ## Run from a PCK in an empty project directory: no loose-file fallback.
 
 const Demo = preload("../examples/story_demo.tscn")
+const GalgameDemo = preload("../examples/galgame_demo.tscn")
 var failures: Array[String] = []
 var checks := 0
 
@@ -48,5 +49,32 @@ func _run() -> void:
 		check(player.vm.program.source_path.ends_with(".%s.md" % locale), "cross-file playback keeps requested language: " + locale)
 	scene.queue_free()
 	await get_tree().process_frame
+	# The polished scene must work from a selected-scene PCK too: its JSON schema,
+	# catalog, eight scripts and imported sprites cannot depend on loose files.
+	var galgame := GalgameDemo.instantiate()
+	var native := galgame.get_node("Presenter") as StoryGalgamePresenter
+	native.save_directory = "user://galgame_export_test_%d" % OS.get_process_id()
+	add_child(galgame)
+	await get_tree().process_frame
+	check(native.preferences.schema.get("sections", []).size() == 5, "galgame settings schema exported")
+	check(native.library.nodes.size() == 8 and native.library.errors.is_empty(), "galgame file graph exported")
+	check(native.backdrop != null and native.characters[0].states[1].portrait != null, "galgame supplied images exported")
+	native.preferences.set_value("instant", true)
+	native.preferences.set_value("motion", "reduced")
+	for step in range(20):
+		if native._state.mode == "choice": break
+		native.advance_time(5)
+		native.advance()
+		native.advance_time(0)
+		await get_tree().process_frame
+	check(native.choices_panel.get_child_count() == 3, "exported galgame reaches choice")
+	native.open_menu("settings")
+	check(native.menu.preview != null, "exported shared preview opens")
+	native.close_menu()
+	native.archive.player.stop()
+	galgame.queue_free()
+	# Menu preview layout and resource releases are deferred by Controls. Drain
+	# their queued work before ending the engine, as a normal scene change does.
+	for frame in range(4): await get_tree().process_frame
 	print("Export PCK: %d passed, %d failed" % [checks - failures.size(), failures.size()])
 	get_tree().quit(0 if failures.is_empty() else 1)
