@@ -1,0 +1,38 @@
+[gd_scene format=3]
+[ext_resource type="Script" path="../gdscript/story_galgame_presenter.gd" id="1"]
+[ext_resource type="Script" path="../gdscript/story_player.gd" id="2"]
+[ext_resource type="Resource" path="galgame/entry.tres" id="3"]
+[ext_resource type="Resource" path="galgame/mahiro.tres" id="4"]
+[ext_resource type="Script" path="../gdscript/story_character.gd" id="5"]
+[ext_resource type="Texture2D" path="galgame/assets/background.webp" id="6"]
+[ext_resource type="Resource" path="../resources/runtime_dependencies.tres" id="7"]
+[ext_resource type="Resource" path="../resources/galgame_dependencies.tres" id="8"]
+
+[node name="CherryStory" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Presenter" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+characters = Array[ExtResource("5")]([ExtResource("4")])
+catalog_path = "res://addons/cherry/modules/story/examples/galgame/catalog.json"
+backdrop = ExtResource("6")
+metadata/galgame_dependencies = ExtResource("8")
+
+[node name="StoryPlayer" type="Node" parent="." node_paths=PackedStringArray("presenter")]
+script = ExtResource("2")
+story = ExtResource("3")
+runtime_dependencies = ExtResource("7")
+presenter = NodePath("../Presenter")
+locale = "zh-CN"
+save_path = "user://cherry_galgame/legacy.json"
