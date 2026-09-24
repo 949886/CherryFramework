@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "slot_count": 24,
+  "slots_per_page": 6,
+  "palettes": {
+    "peach": {"label":"蜜桃苏打","paper":"#fff9f8","ink":"#65535d","muted":"#8c747e","accent":"#b75677","line":"#efdee3","soft":"#fae9ee","name":"#f5d7e1","name_ink":"#974965"},
+    "mint": {"label":"薄荷晴空","paper":"#f8fcfa","ink":"#36564d","muted":"#658477","accent":"#438a78","line":"#d7e8de","soft":"#e7f4ec","name":"#d4eadf","name_ink":"#376b58"},
+    "sea": {"label":"海盐蓝","paper":"#f8fbff","ink":"#40566c","muted":"#71849b","accent":"#5c87b0","line":"#dbe6f1","soft":"#e9f2fa","name":"#d8eafa","name_ink":"#456e98"},
+    "lime": {"label":"青柠奶霜","paper":"#fcfdf6","ink":"#535e3e","muted":"#84906e","accent":"#7d9350","line":"#e4eace","soft":"#f0f5de","name":"#e5edc7","name_ink":"#687b40"},
+    "lilac": {"label":"薰衣草雾","paper":"#fcfaff","ink":"#5c526e","muted":"#8d809c","accent":"#967caf","line":"#e8dff0","soft":"#f2ecf8","name":"#e8dcf2","name_ink":"#79608f"},
+    "apricot": {"label":"杏子奶油","paper":"#fffaf4","ink":"#715849","muted":"#9f8573","accent":"#bf8965","line":"#f0e1d1","soft":"#fcf0e1","name":"#f7e3ca","name_ink":"#946849"},
+    "cream": {"label":"樱桃奶油","paper":"#fffaf4","ink":"#4b3b45","muted":"#8c737d","accent":"#b95471","line":"#ead7db","soft":"#f7e8e9","name":"#f4d5df","name_ink":"#95465f"},
+    "night": {"label":"暮夜蔷薇","paper":"#262433","ink":"#f5e8eb","muted":"#c4aab9","accent":"#efa8bf","line":"#514153","soft":"#383041","name":"#e3a1b8","name_ink":"#302432"},
+    "adaptive": {"label":"跟随系统","inherit":"cream"}
+  },
+  "sections": [
+    {"id":"text","title":"文字样式","preview":true,"fields":[
+      {"key":"font","label":"正文字体","type":"select","default":"sans","options":{"sans":"清晰黑体","rounded":"柔和圆体","serif":"经典明朝"}},
+      {"key":"font_size","label":"文字大小","type":"range","default":23,"min":16,"max":36,"step":1,"unit":"px"},
+      {"key":"weight","label":"文字粗细","type":"select","default":"regular","options":{"regular":"常规","medium":"中等","bold":"加粗"}},
+      {"key":"line_height","label":"行距","type":"range","default":1.5,"min":1.2,"max":2.2,"step":0.05,"unit":"倍"},
+      {"key":"letter_spacing","label":"字间距","type":"range","default":0.5,"min":0,"max":4,"step":0.5,"unit":"px"},
+      {"key":"text_effect","label":"文字效果","type":"select","default":"none","options":{"none":"无","shadow":"柔和阴影","outline":"描边"}},
+      {"key":"theme_text","label":"文字颜色跟随配色","type":"check","default":true},
+      {"key":"text_color","label":"自定义文字颜色","type":"color","default":"#65535d","when":{"theme_text":false}}
+    ]},
+    {"id":"reading","title":"阅读播放","preview":true,"fields":[
+      {"key":"speed","label":"文字显示速度","type":"range","default":30,"min":5,"max":100,"step":1,"unit":"字/秒"},
+      {"key":"instant","label":"立即显示整句","type":"check","default":false},
+      {"key":"auto_delay","label":"自动播放间隔","type":"range","default":3.5,"min":0.5,"max":10,"step":0.5,"unit":"秒"},
+      {"key":"wait_voice","label":"自动播放等待语音结束","type":"check","default":true},
+      {"key":"skip_unread","label":"快进未读内容","type":"check","default":false},
+      {"key":"skip_speed","label":"快进倍率","type":"range","default":8,"min":2,"max":30,"step":1,"unit":"倍"},
+      {"key":"keep_voice","label":"推进对白后保留语音","type":"check","default":false}
+    ]},
+    {"id":"sound","title":"声音","preview":false,"fields":[
+      {"key":"master","label":"总音量","type":"range","default":80,"min":0,"max":100,"step":1,"unit":"%"},
+      {"key":"music","label":"背景音乐","type":"range","default":55,"min":0,"max":100,"step":1,"unit":"%"},
+      {"key":"voice","label":"角色语音","type":"range","default":90,"min":0,"max":100,"step":1,"unit":"%"},
+      {"key":"effects","label":"音效","type":"range","default":60,"min":0,"max":100,"step":1,"unit":"%"},
+      {"key":"mute","label":"静音","type":"check","default":false},
+      {"key":"duck_music","label":"播放语音时降低背景音乐","type":"check","default":true}
+    ]},
+    {"id":"display","title":"画面与界面","preview":true,"fields":[
+      {"key":"palette","label":"界面配色","type":"palette","default":"peach"},
+      {"key":"opacity","label":"纯色模式不透明度","type":"range","default":100,"min":40,"max":100,"step":1,"unit":"%"},
+      {"key":"voice_badge","label":"显示语音标记","type":"check","default":true},
+      {"key":"window_mode","label":"显示模式","type":"select","default":"window","options":{"window":"窗口模式","borderless":"无边框全屏","exclusive":"独占全屏"}},
+      {"key":"resolution","label":"窗口分辨率","type":"select","default":"1280x720","options":{"1280x720":"1280 × 720","1600x900":"1600 × 900","1920x1080":"1920 × 1080","2560x1440":"2560 × 1440"}},
+      {"key":"motion","label":"界面动效","type":"select","default":"normal","options":{"normal":"标准","reduced":"减少动态效果"}},
+      {"key":"glass","label":"启用毛玻璃","type":"check","default":false},
+      {"key":"glass_blur","label":"模糊强度","type":"range","default":22,"min":0,"max":40,"step":1,"unit":"px","when":{"glass":true}},
+      {"key":"glass_tint","label":"玻璃底色浓度","type":"range","default":70,"min":15,"max":95,"step":1,"unit":"%","when":{"glass":true}},
+      {"key":"glass_saturation","label":"背景饱和度","type":"range","default":145,"min":50,"max":200,"step":1,"unit":"%","when":{"glass":true}}
+    ]},
+    {"id":"system","title":"操作与存档","preview":false,"fields":[
+      {"key":"confirm_overwrite","label":"覆盖存档前确认","type":"check","default":true},
+      {"key":"confirm_load","label":"读取存档前确认","type":"check","default":true},
+      {"key":"autosave","label":"遇到选项时自动存档","type":"check","default":true},
+      {"key":"pause_blur","label":"失去焦点时暂停","type":"check","default":true},
+      {"key":"keyboard","label":"启用键盘快捷键","type":"check","default":true}
+    ]}
+  ]
+}
