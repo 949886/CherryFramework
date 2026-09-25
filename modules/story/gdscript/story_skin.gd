@@ -55,9 +55,16 @@ func rebuild() -> void:
 	for type in ["Button", "OptionButton", "LineEdit"]:
 		theme.set_stylebox("normal", type, box(colors.paper, colors.line, 8, 12))
 		theme.set_stylebox("hover", type, box(colors.soft, colors.line, 8, 12))
-		theme.set_stylebox("pressed", type, box(colors.soft, colors.accent, 8, 12))
+		var pressed := box(colors.soft, colors.line, 8, 12)
+		theme.set_stylebox("pressed", type, pressed)
+		theme.set_stylebox("hover_pressed", type, pressed)
 		theme.set_stylebox("disabled", type, box(colors.soft, colors.line, 8, 12))
 		theme.set_stylebox("focus", type, box(Color.TRANSPARENT, colors.accent, 8, 0))
+	# Navigation restores real keyboard focus. Its visual feedback uses the
+	# existing accent text/icon colors, without drawing another outline over the
+	# button surface. Retain LineEdit's focus cue for editable fields.
+	for type in ["Button", "OptionButton", "CheckButton"]:
+		theme.set_stylebox("focus", type, StyleBoxEmpty.new())
 	theme.set_stylebox("panel", "PopupMenu", box(colors.paper, colors.line, 8, 12))
 	theme.set_color("default_color", "RichTextLabel", colors.ink)
 	theme.set_color("font_placeholder_color", "LineEdit", colors.muted)
