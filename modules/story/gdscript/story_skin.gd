@@ -117,3 +117,13 @@ func style_body(label_node: RichTextLabel) -> void:
 	label_node.add_theme_color_override("font_shadow_color", Color(colors.accent, 0.3) if settings.text_effect == "shadow" else Color.TRANSPARENT)
 	label_node.add_theme_constant_override("shadow_offset_x", 1)
 	label_node.add_theme_constant_override("shadow_offset_y", 2)
+
+func style_glass(material: ShaderMaterial, tint: Color, panel_size: Vector2, radius: float) -> void:
+	# Dialogue, preview and choices share the same surface settings. Each keeps
+	# its own material so resizing or highlighting one cannot affect another.
+	var settings := preferences.values
+	material.set_shader_parameter("tint", Color(tint, float(settings.glass_tint) / 100.0))
+	material.set_shader_parameter("blur_pixels", settings.glass_blur)
+	material.set_shader_parameter("saturation", float(settings.glass_saturation) / 100.0)
+	material.set_shader_parameter("panel_size", panel_size)
+	material.set_shader_parameter("radius", radius)

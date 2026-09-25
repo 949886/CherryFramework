@@ -17,11 +17,34 @@ var _from := Vector2.ZERO
 var _target := Vector2.ZERO
 var _box: StyleBoxFlat
 var _settle_elapsed := 0.0
+var glass: ColorRect
+var _capture: BackBufferCopy
+
+func _init() -> void:
+	# Both children draw BEFORE the Button. Its native glyphs remain sharp and
+	# keep native wrapping/input behavior; the shader only paints the backdrop.
+	_capture = BackBufferCopy.new()
+	_capture.show_behind_parent = true
+	_capture.copy_mode = BackBufferCopy.COPY_MODE_DISABLED
+	add_child(_capture)
+	glass = ColorRect.new()
+	glass.show_behind_parent = true
+	glass.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	glass.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	glass.material = ShaderMaterial.new()
+	(glass.material as ShaderMaterial).shader = preload("../resources/dialogue_glass.gdshader")
+	glass.hide()
+	add_child(glass)
+	resized.connect(func():
+		(glass.material as ShaderMaterial).set_shader_parameter("panel_size", size))
 
 func configure(skin: StorySkin) -> void:
 	_skin = skin
 	_motion = skin.preferences.schema.choice_motion
 	_reduced = skin.preferences.values.motion == "reduced"
+	glass.visible = bool(skin.preferences.values.glass)
+	_capture.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT if glass.visible else BackBufferCopy.COPY_MODE_DISABLED
+	skin.style_glass(glass.material as ShaderMaterial, skin.colors.paper, size, 8.0)
 	if _box == null:
 		_box = StorySkin.box(skin.colors.paper, skin.colors.line, 8, 12)
 		# Sharing one instance across states avoids the engine replacing the
@@ -66,8 +89,11 @@ func advance_visuals(delta: float) -> void:
 
 func _draw_state() -> void:
 	var highlight := maxf(emphasis.x, emphasis.y)
-	_box.bg_color = _skin.colors.paper.lerp(_skin.colors.soft, highlight).lerp(_skin.colors.name, emphasis.y * 0.45)
-	_box.border_color = _skin.colors.line.lerp(_skin.colors.accent, highlight)
+	var fill: Color = _skin.colors.paper.lerp(_skin.colors.soft, highlight).lerp(_skin.colors.name, emphasis.y * 0.45)
+	_box.bg_color = Color.TRANSPARENT if glass.visible else fill
+	_box.border_color = Color.TRANSPARENT if glass.visible else _skin.colors.line.lerp(_skin.colors.accent, highlight)
+	if glass.visible:
+		(glass.material as ShaderMaterial).set_shader_parameter("tint", Color(fill, float(_skin.preferences.values.glass_tint) / 100.0))
 	var shift := 0.0 if _reduced else float(_motion.content_shift) * emphasis.x
 	# Equal/opposite inset changes keep the minimum width and hit area fixed.
 	_box.content_margin_left = 12.0 + shift

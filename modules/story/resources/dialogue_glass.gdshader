@@ -9,6 +9,9 @@ uniform vec2 panel_size = vec2(1152.0, 185.0);
 uniform float radius = 18.0;
 
 void fragment() {
+    // Preserve inherited entrance/selection/menu opacity. Assigning a new
+    // COLOR below would otherwise make a fading Control's glass stay opaque.
+    float surface_opacity = COLOR.a;
     // Only the scene already drawn behind this card is sampled. Text is drawn
     // later as ordinary Controls and therefore never passes through this blur.
     float lod = log2(max(1.0, blur_pixels * 0.5));
@@ -18,5 +21,5 @@ void fragment() {
     vec2 q = abs((UV - 0.5) * panel_size) - panel_size * 0.5 + radius;
     float distance = length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0) - radius;
     float mask = 1.0 - smoothstep(-1.0, 1.0, distance);
-    COLOR = vec4(mix(blurred, tint.rgb, tint.a), mask);
+    COLOR = vec4(mix(blurred, tint.rgb, tint.a), mask * surface_opacity);
 }

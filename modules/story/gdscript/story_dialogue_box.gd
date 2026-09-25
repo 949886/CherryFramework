@@ -82,10 +82,7 @@ func apply_skin(skin: StorySkin) -> void:
 	nameplate.visible = not narration
 	skin.style_body(text)
 	glass.visible = bool(settings.glass)
-	var material_instance := glass.material as ShaderMaterial
-	material_instance.set_shader_parameter("tint", Color(skin.colors.paper, float(settings.glass_tint) / 100.0))
-	material_instance.set_shader_parameter("blur_pixels", settings.glass_blur)
-	material_instance.set_shader_parameter("saturation", float(settings.glass_saturation) / 100.0)
+	skin.style_glass(glass.material as ShaderMaterial, skin.colors.paper, size, 18.0)
 	_update_glass_size()
 
 func _update_glass_size() -> void:
