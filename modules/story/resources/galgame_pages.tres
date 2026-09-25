@@ -1,14 +1,14 @@
-[gd_resource type="Resource" format=3]
+[gd_resource type="Resource" format=3 uid="uid://cd4mqrprmqoqn"]
 
-[ext_resource type="Script" path="../../ui/navigation/gdscript/page_definition.gd" id="definition"]
-[ext_resource type="PackedScene" path="../scenes/galgame/gameplay.tscn" id="gameplay"]
-[ext_resource type="PackedScene" path="../scenes/galgame/settings.tscn" id="settings"]
-[ext_resource type="PackedScene" path="../scenes/galgame/save.tscn" id="save"]
-[ext_resource type="PackedScene" path="../scenes/galgame/load.tscn" id="load"]
-[ext_resource type="PackedScene" path="../scenes/galgame/backlog.tscn" id="backlog"]
-[ext_resource type="PackedScene" path="../scenes/galgame/flow.tscn" id="flow"]
-[ext_resource type="PackedScene" path="../scenes/galgame/ending.tscn" id="ending"]
-[ext_resource type="PackedScene" path="../scenes/galgame/confirm.tscn" id="confirm"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/backlog.tscn" id="backlog"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/confirm.tscn" id="confirm"]
+[ext_resource type="Script" uid="uid://ide6cxqd0gth" path="res://addons/cherry/modules/ui/navigation/gdscript/page_definition.gd" id="definition"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/ending.tscn" id="ending"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/flow.tscn" id="flow"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/gameplay.tscn" id="gameplay"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/load.tscn" id="load"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/save.tscn" id="save"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/settings.tscn" id="settings"]
 
 [sub_resource type="Resource" id="page_gameplay"]
 script = ExtResource("definition")
@@ -52,12 +52,12 @@ scene = ExtResource("confirm")
 
 [resource]
 metadata/pages = {
-"gameplay": SubResource("page_gameplay"),
-"settings": SubResource("page_settings"),
-"save": SubResource("page_save"),
-"load": SubResource("page_load"),
 "backlog": SubResource("page_backlog"),
-"flow": SubResource("page_flow"),
+"confirm": SubResource("page_confirm"),
 "ending": SubResource("page_ending"),
-"confirm": SubResource("page_confirm")
+"flow": SubResource("page_flow"),
+"gameplay": SubResource("page_gameplay"),
+"load": SubResource("page_load"),
+"save": SubResource("page_save"),
+"settings": SubResource("page_settings")
 }

@@ -2,8 +2,14 @@
 
 [ext_resource type="Script" path="../../gdscript/story_menu_page.gd" id="script"]
 [ext_resource type="Resource" path="../../resources/galgame_page_transition.tres" id="transition"]
+[ext_resource type="PackedScene" path="slot_card.tscn" id="slot_card"]
+[ext_resource type="PackedScene" path="dialogue_preview.tscn" id="preview"]
+
+[ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
+[ext_resource type="Script" path="../../editor/story_scene_preview.gd" id="editor_preview"]
 
 [node name="MenuPage" type="Control"]
+theme = ExtResource("editor_theme")
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,13 +19,18 @@ grow_vertical = 2
 script = ExtResource("script")
 presentation = 1
 transition = ExtResource("transition")
+slot_card_scene = ExtResource("slot_card")
+preview_scene = ExtResource("preview")
 
 [node name="Sheet" type="PanelContainer" parent="."]
-layout_mode = 0
+theme_type_variation = "StorySheet"
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = 26.0
 offset_top = 20.0
-offset_right = 1254.0
-offset_bottom = 700.0
+offset_right = -26.0
+offset_bottom = -20.0
 
 [node name="Margin" type="MarginContainer" parent="Sheet"]
 layout_mode = 2
@@ -53,3 +64,7 @@ layout_mode = 2
 [node name="Body" type="Control" parent="Sheet/Margin/Layout"]
 layout_mode = 2
 size_flags_vertical = 3
+
+[node name="EditorPreview" type="Node" parent="."]
+script = ExtResource("editor_preview")
+kind = "menu"

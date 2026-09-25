@@ -1,8 +1,11 @@
+@tool
 class_name StoryMenuPage
 extends NavigationPage
 ## A mounted native game page. Cherry owns its route lifetime and focus when
 ## covered; local tabs and slot cards keep their nodes throughout that lifetime.
 
+@export var slot_card_scene: PackedScene
+@export var preview_scene: PackedScene
 @export var page := "settings"
 @export var title := "设置"
 var menus: StoryGalgameMenus
@@ -33,9 +36,12 @@ func configure(owner_menus: StoryGalgameMenus) -> void:
 	skin = presenter.skin
 
 func _ready() -> void:
+	if Engine.is_editor_hint(): return
+	build_content()
+
+func build_content() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	sheet = $Sheet
-	sheet.size = presenter.stage_size - Vector2(52, 40)
 	heading = $Sheet/Margin/Layout/Header/Heading
 	heading.text = title
 	var back_button: Button = $Sheet/Margin/Layout/Header/Back
@@ -73,7 +79,8 @@ func _focus_first(node: Node) -> bool:
 
 func update_skin() -> void:
 	theme = skin.theme
-	sheet.add_theme_stylebox_override("panel", StorySkin.box(skin.colors.paper, skin.colors.line, 20))
+	skin.refresh_labels(self)
+
 	for item in _previews.values(): item.apply_skin(skin)
 	for fit in _preview_fits.values(): fit.call_deferred()
 	for key in rows:
@@ -93,19 +100,12 @@ func update_skin() -> void:
 		elif control is ColorPickerButton: control.color = Color(value)
 
 func _settings() -> void:
-	var split := HBoxContainer.new()
-	body.add_child(split)
-	split.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	split.add_theme_constant_override("separation", 30)
-	var tabs := VBoxContainer.new()
-	tabs.custom_minimum_size.x = 185
-	tabs.add_theme_constant_override("separation", 9)
-	split.add_child(tabs)
-	settings_tabs = TabContainer.new()
-	settings_tabs.tabs_visible = false
-	settings_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	settings_tabs.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	split.add_child(settings_tabs)
+	var tabs: VBoxContainer = body.get_node("Split/Sidebar/Categories")
+	settings_tabs = body.get_node("Split/Pages")
+	var reset: Button = body.get_node("Split/Sidebar/Reset")
+	reset.icon = skin.icon("restart")
+	reset.pressed.connect(func():
+		confirm("恢复默认设置？", "只重置当前分类，其他设置会保留。", func(): presenter.preferences.reset_section(section_id)))
 	var group := ButtonGroup.new()
 	for section in presenter.preferences.schema.sections:
 		var button := skin.button(section.title, func(): select_section(section.id), Vector2(180, 52), section.get("icon", ""))
@@ -117,11 +117,6 @@ func _settings() -> void:
 		scroll.name = section.id
 		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 		settings_tabs.add_child(scroll)
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	tabs.add_child(spacer)
-	tabs.add_child(skin.button("重置本页", func():
-		confirm("恢复默认设置？", "只重置当前分类，其他设置会保留。", func(): presenter.preferences.reset_section(section_id)), Vector2.ZERO, "restart"))
 	select_section(menus.section_id)
 
 func select_section(identity: String) -> void:
@@ -137,7 +132,7 @@ func select_section(identity: String) -> void:
 			_built_sections[identity] = true
 			_build_section(settings_tabs.get_child(index), section)
 	preview = _previews.get(identity)
-	if is_inside_tree() and route.state == NavigationRoute.State.ACTIVE:
+	if not Engine.is_editor_hint() and is_inside_tree() and route.state == NavigationRoute.State.ACTIVE:
 		_tab_buttons[identity].grab_focus()
 
 func _build_section(scroll: ScrollContainer, section: Dictionary) -> void:
@@ -172,20 +167,23 @@ func notify_user(message: String) -> void:
 	menus.notify_user(message)
 
 func _add_preview(content: VBoxContainer) -> void:
-	var frame := Control.new()
-	frame.custom_minimum_size.y = 230
-	frame.clip_contents = true
+	var frame := preview_scene.instantiate() as Control
 	content.add_child(frame)
-	var world := Control.new()
+	var world: Control = frame.get_node("World")
 	world.size = presenter.stage_size
-	frame.add_child(world)
-	var bg := presenter._texture(world, presenter.background.texture, Rect2(Vector2.ZERO, presenter.stage_size))
-	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	var character := presenter._texture(world, presenter.portrait.texture, Rect2(presenter.portrait.position, presenter.portrait.size))
+	var bg: TextureRect = world.get_node("Background")
+	bg.texture = presenter.background.texture
+	bg.stretch_mode = presenter.background.stretch_mode
+	var character: TextureRect = world.get_node("Portrait")
+	character.texture = presenter.portrait.texture
+	character.position = presenter.portrait.position
+	character.size = presenter.portrait.size
 	character.stretch_mode = presenter.portrait.stretch_mode
-	preview = StoryDialogueBox.new()
-	world.add_child(preview)
 	var source := presenter.narration if presenter.narration.visible else presenter.dialogue
+	preview = source.duplicate() as StoryDialogueBox
+	world.add_child(preview)
+	preview.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	preview.show()
 	preview.position = source.position
 	preview.size = source.size
 	preview.narration = source.narration
@@ -210,6 +208,7 @@ func _add_preview(content: VBoxContainer) -> void:
 		content.add_child(skin.button("重播文字预览", func(): _preview_clock = 0.0, Vector2.ZERO, "restart"))
 
 func _process(delta: float) -> void:
+	if Engine.is_editor_hint(): return
 	if is_visible_in_tree() and page == "settings" and is_instance_valid(preview):
 		preview.size = presenter.dialogue.size
 		preview.position = presenter.dialogue.position
@@ -279,61 +278,29 @@ func _setting_row(parent: VBoxContainer, field: Dictionary) -> void:
 			_controls[field.key] = picker
 
 func _slots() -> void:
-	var layout := VBoxContainer.new()
-	body.add_child(layout)
-	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	layout.add_theme_constant_override("separation", 14)
-	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	grid.add_theme_constant_override("h_separation", 16)
-	grid.add_theme_constant_override("v_separation", 16)
-	layout.add_child(grid)
+	var grid: GridContainer = body.get_node("Layout/Grid")
+	# One scene per reusable card; only slot data and page count are dynamic.
 	for index in int(presenter.preferences.schema.slots_per_page):
-		var button := skin.button("", Callable(), Vector2(370, 220))
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		var button := slot_card_scene.instantiate() as Button
 		button.pressed.connect(func(): _slot_action(int(button.get_meta("slot_index"))))
 		grid.add_child(button)
-		var content := VBoxContainer.new()
-		button.add_child(content)
-		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		content.offset_left = 14
-		content.offset_right = -14
-		content.offset_top = 12
-		content.offset_bottom = -12
-		var title := skin.label("", 13, "accent")
-		content.add_child(title)
-		var image := TextureRect.new()
-		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		image.custom_minimum_size.y = 106
-		image.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		content.add_child(image)
-		var text_label := skin.label("", 16)
-		text_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		content.add_child(text_label)
-		var stamp := skin.label("", 12, "muted")
-		content.add_child(stamp)
-		_slot_cards.append({"button":button, "title":title, "image":image, "text":text_label, "stamp":stamp})
-		_ignore_pointer(content)
-	var navigation := HBoxContainer.new()
-	navigation.add_theme_constant_override("separation", 10)
-	layout.add_child(navigation)
+		_slot_cards.append({"button": button, "title": button.get_node("Content/Title"),
+			"image": button.get_node("Content/Image"), "text": button.get_node("Content/Text"),
+			"stamp": button.get_node("Content/Stamp")})
+	var navigation: HBoxContainer = body.get_node("Layout/Navigation")
 	var group := ButtonGroup.new()
 	for index in ceili(float(presenter.archive.slot_count) / _slot_cards.size()):
 		var button := skin.button("%02d" % (index + 1), func(): select_slot_page(index), Vector2(58, 36))
 		button.toggle_mode = true
 		button.button_group = group
-		navigation.add_child(button)
+		navigation.get_node("Pages").add_child(button)
 		_slot_buttons.append(button)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	navigation.add_child(spacer)
-	navigation.add_child(skin.label("%d 个栏位" % presenter.archive.slot_count, 14, "muted"))
-	if page == "load":
-		navigation.add_child(skin.button("读取自动存档", func():
-			_request_load(func(): return presenter.archive.load_automatic()), Vector2.ZERO, "load"))
+	(navigation.get_node("Count") as Label).text = "%d 个栏位" % presenter.archive.slot_count
+	var automatic: Button = navigation.get_node("Automatic")
+	automatic.visible = page == "load"
+	automatic.icon = skin.icon("load")
+	automatic.pressed.connect(func():
+		_request_load(func(): return presenter.archive.load_automatic()))
 	select_slot_page(menus.slot_page)
 
 func select_slot_page(index: int) -> void:
@@ -344,6 +311,14 @@ func select_slot_page(index: int) -> void:
 	refresh_slots()
 
 func refresh_slots() -> void:
+	if Engine.is_editor_hint():
+		for index in _slot_cards.size():
+			var card: Dictionary = _slot_cards[index]
+			card.title.text = "SLOT %02d" % (index + 1)
+			card.text.text = "故事的一页" if index == 0 else "空白的故事页"
+			card.stamp.text = "编辑预览 · 示例记录" if index == 0 else "暂无记录"
+			card.button.disabled = page == "load" and index != 0
+		return
 	# Bind new slot data to the existing six card nodes. Focus, hover and grid
 	# geometry survive pagination; no scene subtree is torn down or faded out.
 	for offset in _slot_cards.size():
@@ -374,11 +349,8 @@ func refresh_slots() -> void:
 			card.text.text = "空白的故事页" if slot.status == "empty" else "存档已损坏"
 			card.stamp.text = "点击保存此刻" if page == "save" else "暂无记录"
 
-func _ignore_pointer(node: Node) -> void:
-	if node is Control: node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for child in node.get_children(): _ignore_pointer(child)
-
 func _slot_action(index: int) -> void:
+	if Engine.is_editor_hint(): return
 	if page == "load":
 		_request_load(func(): return presenter.archive.load_slot(index))
 		return
@@ -436,12 +408,14 @@ func _scroll_end(scroll: ScrollContainer) -> void:
 	if is_instance_valid(scroll): scroll.scroll_vertical = int(scroll.get_v_scroll_bar().max_value)
 
 func _play_voice(path: String) -> void:
+	if Engine.is_editor_hint(): return
 	if ResourceLoader.exists(path) and load(path) is AudioStream:
 		presenter.replay_player.stream = load(path)
 		presenter.replay_player.play()
 	else: notify_user("这句对白的语音资源暂不可用。")
 
 func _replay_current_voice() -> void:
+	if Engine.is_editor_hint(): return
 	var stream := presenter.audio_player.stream
 	if stream != null:
 		presenter.replay_player.stream = stream

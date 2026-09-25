@@ -1,103 +1,84 @@
+@tool
 class_name StoryGalgamePresenter
 extends StoryPresenter
 ## Native galgame shell. The VM owns execution; this class owns presentation,
 ## input and the single virtual stage shared by gameplay and all menu pages.
 
-@export var stage_size := Vector2(1280, 720)
+## The Stage node is the authored virtual canvas. Resize it in the scene.
+var stage_size: Vector2:
+	get: return stage.size
+@export_group("Galgame")
+@export var choice_scene: PackedScene
+@export_range(0, 100, 1) var choice_gap := 28.0
+@export_range(0, 300, 1) var choice_top_margin := 122.0
 @export var save_directory := "user://cherry_galgame"
 @export_file("*.json") var catalog_path := ""
 @export var backdrop: Texture2D
 @export var music_stream: AudioStream
 @export var effect_stream: AudioStream
 @export var game_title := "Cherry Story"
-@export var footer_caption := "CHERRY STORY / 黄昏的问候"
+@export var footer_caption := "CHERRY STORY"
 var preferences := StoryPreferences.new()
 var archive := StoryArchive.new()
 var library := StoryLibrary.new()
 var skin: StorySkin
-var stage: Control
-var dialogue: StoryDialogueBox
-var narration: StoryDialogueBox
-var choice_scroll: ScrollContainer
-var chrome: Control
-var menu: StoryGalgameMenus
-var music_player: AudioStreamPlayer
-var effect_player: AudioStreamPlayer
-var replay_player: AudioStreamPlayer
+@export_group("Galgame View Nodes")
+@export var game_view: Control
+@export var brand_label: Label
+@export var caption_label: Label
+@export var footer: HBoxContainer
+@export var stage: Control
+@export var dialogue: StoryDialogueBox
+@export var narration: StoryDialogueBox
+@export var choice_scroll: ScrollContainer
+@export var chrome: Control
+@export var menu: StoryGalgameMenus
+@export var music_player: AudioStreamPlayer
+@export var effect_player: AudioStreamPlayer
+@export var replay_player: AudioStreamPlayer
 var footer_buttons: Dictionary = {}
-var location_label: Label
+@export var location_label: Label
 var thumbnail := PackedByteArray()
 var ui_hidden := false
 var _initialized := false
 var _line_read := false
 var _focus_paused := false
 var _hidden_state: Array[bool] = []
+var _authored_panel_heights: Dictionary = {}
+var _choice_layout_pending := false
+var _choice_icon: Texture2D
 var _choice_pending := -1
 var _choice_token := -1
 var _choice_remaining := 0.0
 
 func _ready() -> void:
+	if Engine.is_editor_hint(): return
 	preferences.path = save_directory.path_join("settings.cfg")
 	preferences.load_settings()
 	skin = StorySkin.new(preferences)
 	var root := get_node(".") as Control
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var bars := ColorRect.new()
-	bars.color = Color("17151c")
-	bars.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(bars)
-	bars.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	stage = Control.new()
-	stage.size = stage_size
-	stage.clip_contents = true
-	root.add_child(stage)
-	background = _texture(stage, backdrop, Rect2(Vector2.ZERO, stage_size))
-	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	portrait = _texture(stage, null, Rect2(12, 36, 614, 1044))
-	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	dialogue = StoryDialogueBox.new()
-	stage.add_child(dialogue)
-	dialogue_panel = dialogue
-	dialogue_text = dialogue.text
-	speaker_label = dialogue.speaker
-	narration = StoryDialogueBox.new()
-	narration.narration = true
-	stage.add_child(narration)
-	article_panel = narration
-	article_text = narration.text
-	narration.hide()
-	choice_scroll = ScrollContainer.new()
-	choice_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	stage.add_child(choice_scroll)
-	choices_panel = VBoxContainer.new()
-	choices_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	choices_panel.add_theme_constant_override("separation", 12)
-	choice_scroll.add_child(choices_panel)
-	choices_panel.hide()
-	popup_layer = ColorRect.new()
-	popup_layer.color = Color(0.08, 0.06, 0.09, 0.82)
-	popup_layer.size = stage_size
-	popup_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	stage.add_child(popup_layer)
-	popup_texture = _texture(popup_layer, null, Rect2(140, 80, 1000, 520))
-	popup_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	popup_layer.hide()
+	# Fixed controls and their references are authored in galgame_presenter.tscn.
+	# Capture only the minimum height; horizontal anchors and bottom margins
+	# remain scene-owned, including overrides on inherited presenter scenes.
+	for panel in [dialogue, narration]:
+		_authored_panel_heights[panel] = panel.size.y
+	if backdrop != null: background.texture = backdrop
+	_bind_chrome()
+	_choice_icon = skin.icon("chevron-right")
+	choices_panel.minimum_size_changed.connect(_schedule_choice_layout)
 	for id in ["Voice", "Music", "Effects"]:
 		if AudioServer.get_bus_index(id) < 0:
 			AudioServer.add_bus()
 			AudioServer.set_bus_name(AudioServer.bus_count - 1, id)
-	audio_player = _audio("Voice")
-	replay_player = _audio("Voice")
-	music_player = _audio("Music")
-	effect_player = _audio("Effects")
+	audio_player.bus = &"Voice"
+	replay_player.bus = &"Voice"
+	music_player.bus = &"Music"
+	effect_player.bus = &"Effects"
 	music_player.stream = music_stream
 	music_player.finished.connect(func():
 		if music_player.stream != null: music_player.play())
 	if music_stream != null: music_player.play()
 	effect_player.stream = effect_stream
-	_build_chrome()
-	menu = StoryGalgameMenus.new()
-	stage.add_child(menu)
 	menu.configure(self)
 	preferences.changed.connect(_settings_changed)
 	archive.failed.connect(func(message): menu.notify_user(message))
@@ -118,45 +99,25 @@ func _texture(parent: Node, texture: Texture2D, rect: Rect2) -> TextureRect:
 	parent.add_child(result)
 	return result
 
-func _audio(bus_name: String) -> AudioStreamPlayer:
-	var result := AudioStreamPlayer.new()
-	result.bus = bus_name
-	add_child(result)
-	return result
-
-func _build_chrome() -> void:
-	chrome = Control.new()
-	chrome.size = stage_size
-	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	stage.add_child(chrome)
-	var brand := skin.icon_label("cherry", game_title, 24)
-	brand.position = Vector2(32, 24)
-	chrome.add_child(brand)
-	location_label = skin.label("黄昏 / 客厅", 14, "muted")
-	location_label.position = Vector2(990, 30)
-	location_label.size.x = 258
-	location_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	chrome.add_child(location_label)
-	var caption := skin.label(footer_caption, 11, "muted")
-	caption.position = Vector2(44, 687)
-	chrome.add_child(caption)
-	var footer := HBoxContainer.new()
-	footer.position = Vector2(522, 678)
-	footer.add_theme_constant_override("separation", 3)
-	chrome.add_child(footer)
-	var actions := [
-		["backlog", "回顾", func(): open_menu("backlog"), "history"],
-		["auto", "自动", toggle_auto, "play"], ["save", "存档", func(): open_menu("save"), "save"],
-		["load", "读档", func(): open_menu("load"), "load"], ["hide", "隐藏", toggle_hidden, "eye"],
-		["flow", "流程图", func(): open_menu("flow"), "flow"], ["skip", "快进", toggle_skip, "fast-forward"],
-		["settings", "设置", func(): open_menu("settings"), "settings"],
-	]
-	for action in actions:
-		var button := skin.button(action[1], action[2], Vector2(83, 34), action[3])
-		button.flat = true
-		button.add_theme_font_size_override("font_size", 14)
-		footer.add_child(button)
-		footer_buttons[action[0]] = button
+func _bind_chrome() -> void:
+	brand_label.text = game_title
+	caption_label.text = footer_caption
+	var brand_icon := brand_label.get_parent().get_node("Icon") as TextureRect
+	brand_icon.texture = skin.icon("cherry", int(brand_icon.custom_minimum_size.x))
+	# Scene metadata binds semantic actions without depending on node names or
+	# ordering; labels, icons, spacing and dimensions belong to the scene.
+	var actions := {
+		"backlog": open_menu.bind("backlog"), "auto": toggle_auto,
+		"save": open_menu.bind("save"), "load": open_menu.bind("load"),
+		"hide": toggle_hidden, "flow": open_menu.bind("flow"),
+		"skip": toggle_skip, "settings": open_menu.bind("settings"),
+	}
+	for child in footer.get_children():
+		if not child is Button: continue
+		var identity := String(child.get_meta("action", ""))
+		if not actions.has(identity): continue
+		child.pressed.connect(actions[identity])
+		footer_buttons[identity] = child
 
 func setup(host: Object) -> void:
 	super.setup(host)
@@ -182,16 +143,26 @@ func _layout_stage() -> void:
 	_layout_dialogue()
 
 func _layout_dialogue() -> void:
-	# The choice stack shares the dialogue's anchor, not a percentage of the
-	# viewport. Changing the window aspect can only add letterbox margins.
-	var height := maxf(185.0, float(preferences.values.font_size) * float(preferences.values.line_height) * 2 + 102)
+	# Only grow the text panels upward. Keep the authored bottom and both
+	# horizontal anchors, so editor layout changes survive settings and resize.
 	for panel in [dialogue, narration]:
-		panel.position = Vector2(42, stage_size.y - 54 - height)
-		panel.size = Vector2(stage_size.x - 84, height)
-	var count := choices_panel.get_child_count()
-	var stack_height := minf(count * 60.0 + maxi(0, count - 1) * 12.0, dialogue.position.y - 122)
-	choice_scroll.position = Vector2(stage_size.x * 0.5, dialogue.position.y - 28 - stack_height)
-	choice_scroll.size = Vector2(stage_size.x * 0.5 - 60, stack_height)
+		var height: float = panel.fitted_height(preferences.values, _authored_panel_heights[panel])
+		panel.offset_top = panel.offset_bottom - height
+	_layout_choices()
+
+func _schedule_choice_layout() -> void:
+	# Wrapping/theme changes settle through Godot's container pass. Measure the
+	# real row minimums afterwards instead of assuming every option is 60px.
+	if _choice_layout_pending: return
+	_choice_layout_pending = true
+	_layout_choices.call_deferred()
+
+func _layout_choices() -> void:
+	_choice_layout_pending = false
+	var bottom := dialogue.position.y - choice_gap
+	var height := minf(choices_panel.get_combined_minimum_size().y, maxf(0, bottom - choice_top_margin))
+	choice_scroll.offset_top = bottom - height
+	choice_scroll.offset_bottom = bottom
 	choice_scroll.visible = choices_panel.visible and not ui_hidden
 
 func _begin(mode: String, payload: Dictionary) -> int:
@@ -229,18 +200,12 @@ func _build_choices(payload: Dictionary) -> void:
 		child.queue_free()
 	var options: Array = payload.get("options", [])
 	for index in options.size():
-		var button := StoryChoiceButton.new()
-		button.configure(skin)
+		var button := choice_scene.instantiate() as StoryChoiceButton
 		button.text = "%02d    %s" % [index + 1, String(options[index].get("text", ""))]
-		button.icon = skin.icon("chevron-right")
-		button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.custom_minimum_size = Vector2(0, 60)
-		button.add_theme_font_size_override("font_size", 18)
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		button.icon = _choice_icon
 		button.pressed.connect(_choose.bind(index, _cancel_token))
 		choices_panel.add_child(button)
+		button.configure(skin)
 
 func _choose(index: int, token: int) -> void:
 	if token != _cancel_token or not _active or paused or _state.mode != "choice" or _choice_pending >= 0: return
@@ -417,3 +382,11 @@ func _pointer_is_over_button() -> bool:
 		if current is BaseButton or current is Range: return true
 		current = current.get_parent()
 	return false
+
+func _process(delta: float) -> void:
+	if Engine.is_editor_hint(): return
+	super._process(delta)
+
+func _exit_tree() -> void:
+	if Engine.is_editor_hint(): return
+	super._exit_tree()

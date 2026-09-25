@@ -29,6 +29,8 @@ python addons/cherry/modules/story/tests/run_tests.py --godot "C:/path/to/godot_
 | `save_test.gd` | 深快照、类型校验、旧格式恢复、位置迁移、JSON 损坏、原子写入、大小限制 |
 | `presentation_test.gd` | 句中文字/等待/输入/淡入恢复、暂停、快进、自动播放、语音和立绘、60/120 Hz 一致性 |
 | `extension_test.gd` | 自定义命令、参数验证、注册冲突、替换表现层、扩展状态保存 |
+| `galgame_scene_test.gd` | 独立 Presenter 场景接入、布局覆盖序列化、自定义选项模板、窗口适配、预览布局一致与材质隔离 |
+| `galgame_editor_suite.gd` | 真实编辑器中的十个 Galgame 场景、共享主题与示例内容、保存清理/重建、样式编辑保留、无玩家设置和音频副作用 |
 | `cache_test.gd` | 缓存命中、独立运行时、初始化次数、源码/剧情 ID/编译器版本失效、容量淘汰、错误恢复 |
 | `validator_test.gd` | 跳转闭环、混合格式及语言、SID 漂移、命令/素材/显式依赖诊断、验证时不执行作者代码 |
 | `editor_suite.gd` | 主页面、菜单、资源检查器、文件筛选、CodeEdit 撤销/保存、CRLF、外部冲突和删除保护、恢复缓冲、诊断定位、原生复制、UID、资源槽赋值和场景保存 |

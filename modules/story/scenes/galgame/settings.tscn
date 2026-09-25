@@ -2,7 +2,43 @@
 
 [ext_resource type="PackedScene" path="menu_page.tscn" id="base"]
 
+[sub_resource type="StyleBoxEmpty" id="empty"]
+
 [node name="Settings" instance=ExtResource("base")]
 navigation_path = "ui://cherry/story/settings"
 page = "settings"
 title = "设置"
+
+[node name="Split" type="HBoxContainer" parent="Sheet/Margin/Layout/Body"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 30
+
+[node name="Sidebar" type="VBoxContainer" parent="Sheet/Margin/Layout/Body/Split"]
+layout_mode = 2
+custom_minimum_size = Vector2(185, 0)
+theme_override_constants/separation = 9
+
+[node name="Categories" type="VBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Sidebar"]
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="Spacer" type="Control" parent="Sheet/Margin/Layout/Body/Split/Sidebar"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Reset" type="Button" parent="Sheet/Margin/Layout/Body/Split/Sidebar"]
+layout_mode = 2
+text = "重置本页"
+mouse_default_cursor_shape = 2
+
+[node name="Pages" type="TabContainer" parent="Sheet/Margin/Layout/Body/Split"]
+layout_mode = 2
+size_flags_horizontal = 3
+tabs_visible = false
+theme_override_styles/panel = SubResource("empty")

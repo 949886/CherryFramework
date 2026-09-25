@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="PackedScene" path="menu_page.tscn" id="base"]
+[ext_resource type="PackedScene" path="slots.tscn" id="base"]
 
 [node name="Load" instance=ExtResource("base")]
 navigation_path = "ui://cherry/story/load"

@@ -84,6 +84,8 @@ def main():
         if file.suffix in ('.tscn', '.tres'):
             content = file.read_text(encoding='utf-8').replace(
                 'res://addons/cherry/modules/story/', f'res://{module_path}/')
+            content = content.replace('res://addons/cherry/modules/ui/navigation/',
+                                      'res://features/ui/navigation/')
             # This fixture intentionally drops import cache paths/UIDs and
             # reimports assets. Editor-saved ext_resource UID hints refer to the
             # source project, not these freshly generated imports. Resolve the

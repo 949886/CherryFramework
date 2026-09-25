@@ -1,13 +1,15 @@
+@tool
 class_name StorySkin
 extends RefCounted
 ## Shared native drawing tokens. Dialogue and settings preview deliberately use
 ## the same component and fonts rather than separately approximated styles.
 
+const BASE_THEME = preload("../resources/galgame_theme.tres")
 const ICONS = preload("../resources/galgame_icons.tres")
 
 var preferences: StoryPreferences
 var colors: Dictionary = {}
-var ui_font: SystemFont
+var ui_font: Font
 var body_font: FontVariation
 var theme: Theme
 var _sized_icons: Dictionary = {}
@@ -21,8 +23,8 @@ func rebuild() -> void:
 	var palette := preferences.palette()
 	for key in ["paper", "ink", "muted", "accent", "line", "soft", "name", "name_ink"]:
 		colors[key] = Color(String(palette[key]))
-	ui_font = SystemFont.new()
-	ui_font.font_names = PackedStringArray(["Noto Serif SC", "Source Han Serif SC", "SimSun", "serif"])
+	theme = BASE_THEME.duplicate(true)
+	ui_font = theme.default_font
 	var sans := SystemFont.new()
 	var families := {
 		"sans": ["Noto Sans SC", "Microsoft YaHei", "PingFang SC", "sans-serif"],
@@ -34,9 +36,6 @@ func rebuild() -> void:
 	body_font = FontVariation.new()
 	body_font.base_font = sans
 	body_font.spacing_glyph = roundi(preferences.values.letter_spacing)
-	theme = Theme.new()
-	theme.default_font = ui_font
-	theme.default_font_size = 16
 	for type in ["Label", "Button", "CheckButton", "OptionButton", "LineEdit", "PopupMenu"]:
 		theme.set_color("font_color", type, colors.ink)
 		theme.set_color("font_hover_color", type, colors.accent)
@@ -52,36 +51,33 @@ func rebuild() -> void:
 		theme.set_constant("h_separation", type, 7)
 	theme.set_icon("arrow", "OptionButton", icon("chevron-down"))
 	theme.set_constant("modulate_arrow", "OptionButton", 1)
+	# Geometry/fonts come from the same Theme resource used by the 2D editor.
+	# Runtime preferences change colors, never recreate the authored styleboxes.
 	for type in ["Button", "OptionButton", "LineEdit"]:
-		theme.set_stylebox("normal", type, box(colors.paper, colors.line, 8, 12))
-		theme.set_stylebox("hover", type, box(colors.soft, colors.line, 8, 12))
-		var pressed := box(colors.soft, colors.line, 8, 12)
-		theme.set_stylebox("pressed", type, pressed)
-		theme.set_stylebox("hover_pressed", type, pressed)
-		theme.set_stylebox("disabled", type, box(colors.soft, colors.line, 8, 12))
-		theme.set_stylebox("focus", type, box(Color.TRANSPARENT, colors.accent, 8, 0))
-	# Navigation restores real keyboard focus. Its visual feedback uses the
-	# existing accent text/icon colors, without drawing another outline over the
-	# button surface. Retain LineEdit's focus cue for editable fields.
-	for type in ["Button", "OptionButton", "CheckButton"]:
-		theme.set_stylebox("focus", type, StyleBoxEmpty.new())
-	theme.set_stylebox("panel", "PopupMenu", box(colors.paper, colors.line, 8, 12))
+		for state in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+			_tint_box(state, type, "paper" if state == "normal" else "soft", "line")
+	_tint_box("focus", "LineEdit", "", "accent")
+	_tint_box("panel", "PopupMenu", "paper", "line")
+	for type in ["StorySheet", "StoryConfirmation", "StoryToast", "StoryDialogue"]:
+		_tint_box("panel", type, "paper", "line")
+	_tint_box("panel", "StoryNameplate", "name", "")
+	for pair in [["StoryMuted", "muted"], ["StoryAccent", "accent"], ["StorySpeaker", "name_ink"]]:
+		theme.set_color("font_color", pair[0], colors[pair[1]])
 	theme.set_color("default_color", "RichTextLabel", colors.ink)
 	theme.set_color("font_placeholder_color", "LineEdit", colors.muted)
 	for key in ["slider", "grabber_area", "grabber_area_highlight"]:
-		var track := box(colors.line if key == "slider" else colors.accent, Color.TRANSPARENT, 3, 0)
-		track.content_margin_top = 3
-		track.content_margin_bottom = 3
-		theme.set_stylebox(key, "HSlider", track)
+		_tint_box(key, "HSlider", "line" if key == "slider" else "accent", "")
 	for key in ["grabber", "grabber_highlight"]:
 		var grabber := DPITexture.create_from_string('<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="7" fill="#%s" stroke="#%s" stroke-width="2"/></svg>' % [colors.paper.to_html(false), colors.accent.to_html(false)])
 		theme.set_icon(key, "HSlider", grabber)
-	theme.set_stylebox("background", "ProgressBar", box(colors.line, Color.TRANSPARENT, 4))
-	theme.set_stylebox("fill", "ProgressBar", box(colors.accent, Color.TRANSPARENT, 4))
-	var separator := StyleBoxLine.new()
-	separator.color = colors.line
-	separator.thickness = 1
-	theme.set_stylebox("separator", "HSeparator", separator)
+	_tint_box("background", "ProgressBar", "line", "")
+	_tint_box("fill", "ProgressBar", "accent", "")
+	(theme.get_stylebox("separator", "HSeparator") as StyleBoxLine).color = colors.line
+
+func _tint_box(item: String, type: String, fill: String, border: String) -> void:
+	var style := theme.get_stylebox(item, type) as StyleBoxFlat
+	style.bg_color = Color.TRANSPARENT if fill.is_empty() else colors[fill]
+	style.border_color = Color.TRANSPARENT if border.is_empty() else colors[border]
 
 static func box(fill: Color, border := Color.TRANSPARENT, radius := 8, padding := 0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -150,7 +146,7 @@ func button(text: String, callback: Callable, minimum := Vector2.ZERO, icon_id :
 	if not icon_id.is_empty(): result.icon = icon(icon_id)
 	result.custom_minimum_size = minimum
 	result.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	if callback.is_valid():
+	if callback.is_valid() and not Engine.is_editor_hint():
 		result.pressed.connect(callback)
 	return result
 

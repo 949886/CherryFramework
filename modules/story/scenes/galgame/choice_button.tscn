@@ -1,0 +1,57 @@
+[gd_scene format=3]
+[ext_resource type="Script" path="../../gdscript/story_choice_button.gd" id="script"]
+[ext_resource type="Shader" path="../../resources/dialogue_glass.gdshader" id="shader"]
+[ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
+[ext_resource type="Script" path="../../editor/story_scene_preview.gd" id="editor_preview"]
+
+[sub_resource type="ShaderMaterial" id="glass"]
+resource_local_to_scene = true
+shader = ExtResource("shader")
+[sub_resource type="StyleBoxFlat" id="button"]
+content_margin_left = 12.0
+content_margin_right = 12.0
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.976, 0.969, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+
+[node name="ChoiceButton" type="Button" node_paths=PackedStringArray("glass", "_capture")]
+theme = ExtResource("editor_theme")
+custom_minimum_size = Vector2(0, 60)
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("button")
+text = "选项"
+alignment = 0
+icon_alignment = 2
+autowrap_mode = 3
+script = ExtResource("script")
+glass = NodePath("Glass")
+_capture = NodePath("Capture")
+
+[node name="Capture" type="BackBufferCopy" parent="."]
+show_behind_parent = true
+copy_mode = 0
+
+[node name="Glass" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+show_behind_parent = true
+mouse_filter = 2
+material = SubResource("glass")
+
+[node name="EditorPreview" type="Node" parent="."]
+script = ExtResource("editor_preview")
+kind = "choice"

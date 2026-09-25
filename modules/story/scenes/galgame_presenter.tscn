@@ -1,0 +1,419 @@
+[gd_scene format=3 uid="uid://dm4qtvxxned15"]
+
+[ext_resource type="Shader" uid="uid://bk7uu4sebpgir" path="res://addons/cherry/modules/story/resources/dialogue_glass.gdshader" id="5_bx71u"]
+[ext_resource type="Texture2D" uid="uid://xi50uo27334d" path="res://addons/cherry/modules/story/icons/galgame/cherry.svg" id="cherry"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/choice_button.tscn" id="choice"]
+[ext_resource type="Resource" path="res://addons/cherry/modules/story/resources/galgame_dependencies.tres" id="dependencies"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/dialogue_box.tscn" id="dialogue"]
+[ext_resource type="Texture2D" uid="uid://cir6y126c2oom" path="res://addons/cherry/modules/story/icons/galgame/eye.svg" id="eye"]
+[ext_resource type="Texture2D" uid="uid://b6bxtg7itx85j" path="res://addons/cherry/modules/story/icons/galgame/fast-forward.svg" id="fast-forward"]
+[ext_resource type="Texture2D" uid="uid://il2enge8kj30" path="res://addons/cherry/modules/story/icons/galgame/flow.svg" id="flow"]
+[ext_resource type="Texture2D" uid="uid://dh83n48cdjmvc" path="res://addons/cherry/modules/story/icons/galgame/history.svg" id="history"]
+[ext_resource type="Texture2D" uid="uid://dcr08vgqwk03g" path="res://addons/cherry/modules/story/icons/galgame/load.svg" id="load"]
+[ext_resource type="PackedScene" path="res://addons/cherry/modules/story/scenes/galgame/menus.tscn" id="menus"]
+[ext_resource type="Texture2D" uid="uid://0x1pnsyh1gbn" path="res://addons/cherry/modules/story/icons/galgame/play.svg" id="play"]
+[ext_resource type="Texture2D" uid="uid://d3tcsbkbdx61i" path="res://addons/cherry/modules/story/icons/galgame/save.svg" id="save"]
+[ext_resource type="Script" uid="uid://dypiot1qmqgtn" path="res://addons/cherry/modules/story/gdscript/story_galgame_presenter.gd" id="script"]
+[ext_resource type="Texture2D" uid="uid://5cgvug3ttffe" path="res://addons/cherry/modules/story/icons/galgame/settings.svg" id="settings"]
+
+[ext_resource type="Theme" path="../resources/galgame_theme.tres" id="editor_theme"]
+
+[ext_resource type="Script" path="../editor/story_scene_preview.gd" id="editor_preview"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rfy3m"]
+resource_local_to_scene = true
+bg_color = Color(1, 0.976, 0.969, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.92, 0.84, 0.86, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_i5m2k"]
+resource_local_to_scene = true
+shader = ExtResource("5_bx71u")
+shader_parameter/tint = Color(1, 0.97, 0.98, 0.7)
+shader_parameter/blur_pixels = 22.0
+shader_parameter/saturation = 1.45
+shader_parameter/panel_size = Vector2(1152, 185)
+shader_parameter/radius = 18.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ftmx6"]
+resource_local_to_scene = true
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96, 0.85, 0.89, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btf6p"]
+resource_local_to_scene = true
+bg_color = Color(1, 0.976, 0.969, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.92, 0.84, 0.86, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tvlkv"]
+resource_local_to_scene = true
+shader = ExtResource("5_bx71u")
+shader_parameter/tint = Color(1, 0.97, 0.98, 0.7)
+shader_parameter/blur_pixels = 22.0
+shader_parameter/saturation = 1.45
+shader_parameter/panel_size = Vector2(1152, 185)
+shader_parameter/radius = 18.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cjqi0"]
+resource_local_to_scene = true
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96, 0.85, 0.89, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="GalgamePresenter" type="Control" unique_id=1130249076 node_paths=PackedStringArray("game_view", "brand_label", "caption_label", "footer", "stage", "dialogue", "narration", "choice_scroll", "chrome", "menu", "music_player", "effect_player", "replay_player", "location_label", "background", "portrait", "article_panel", "article_text", "dialogue_panel", "speaker_label", "dialogue_text", "choices_panel", "popup_layer", "popup_texture", "audio_player")]
+theme = ExtResource("editor_theme")
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("script")
+choice_scene = ExtResource("choice")
+game_view = NodePath("Stage/GameView")
+brand_label = NodePath("Stage/GameView/Chrome/Brand/Title")
+caption_label = NodePath("Stage/GameView/Chrome/Caption")
+footer = NodePath("Stage/GameView/Chrome/Footer")
+stage = NodePath("Stage")
+dialogue = NodePath("Stage/GameView/Dialogue")
+narration = NodePath("Stage/GameView/Narration")
+choice_scroll = NodePath("Stage/GameView/ChoiceScroll")
+chrome = NodePath("Stage/GameView/Chrome")
+menu = NodePath("Stage/Menus")
+music_player = NodePath("Audio/Music")
+effect_player = NodePath("Audio/Effects")
+replay_player = NodePath("Audio/Replay")
+location_label = NodePath("Stage/GameView/Chrome/Location")
+background = NodePath("Stage/GameView/Background")
+portrait = NodePath("Stage/GameView/Portrait")
+article_panel = NodePath("Stage/GameView/Narration")
+article_text = NodePath("Stage/GameView/Narration/Margin/Content/Text")
+dialogue_panel = NodePath("Stage/GameView/Dialogue")
+speaker_label = NodePath("Stage/GameView/Dialogue/Overlay/Nameplate/Names/Speaker")
+dialogue_text = NodePath("Stage/GameView/Dialogue/Margin/Content/Text")
+choices_panel = NodePath("Stage/GameView/ChoiceScroll/Choices")
+popup_layer = NodePath("Stage/GameView/Popup")
+popup_texture = NodePath("Stage/GameView/Popup/Image")
+audio_player = NodePath("Audio/Voice")
+metadata/galgame_dependencies = ExtResource("dependencies")
+
+[node name="Letterbox" type="ColorRect" parent="." unique_id=1338394181]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.09, 0.082, 0.11, 1)
+
+[node name="Stage" type="Control" parent="." unique_id=101889858]
+clip_contents = true
+anchors_preset = 0
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+
+[node name="GameView" type="Control" parent="Stage" unique_id=107522170]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Background" type="TextureRect" parent="Stage/GameView" unique_id=37543532]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Portrait" type="TextureRect" parent="Stage/GameView" unique_id=106801713]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 36.0
+offset_right = 626.0
+offset_bottom = 1080.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Dialogue" parent="Stage/GameView" unique_id=1105312071 instance=ExtResource("dialogue")]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 42.0
+offset_top = -239.0
+offset_right = -42.0
+offset_bottom = -54.0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_rfy3m")
+
+[node name="Glass" parent="Stage/GameView/Dialogue" index="1"]
+material = SubResource("ShaderMaterial_i5m2k")
+
+[node name="Nameplate" parent="Stage/GameView/Dialogue/Overlay" index="0"]
+theme_override_styles/panel = SubResource("StyleBoxFlat_ftmx6")
+
+[node name="Narration" parent="Stage/GameView" unique_id=1782561471 instance=ExtResource("dialogue")]
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 42.0
+offset_top = -239.0
+offset_right = -42.0
+offset_bottom = -54.0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_btf6p")
+narration = true
+
+[node name="Glass" parent="Stage/GameView/Narration" index="1"]
+material = SubResource("ShaderMaterial_tvlkv")
+
+[node name="Nameplate" parent="Stage/GameView/Narration/Overlay" index="0"]
+theme_override_styles/panel = SubResource("StyleBoxFlat_cjqi0")
+
+[node name="ChoiceScroll" type="ScrollContainer" parent="Stage/GameView" unique_id=1014412308]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 1.0
+offset_top = 249.0
+offset_right = -60.0
+offset_bottom = 453.0
+horizontal_scroll_mode = 0
+
+[node name="Choices" type="VBoxContainer" parent="Stage/GameView/ChoiceScroll" unique_id=221536607]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Popup" type="ColorRect" parent="Stage/GameView" unique_id=497145217]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.08, 0.06, 0.09, 0.82)
+
+[node name="Image" type="TextureRect" parent="Stage/GameView/Popup" unique_id=1978939494]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 80.0
+offset_right = 1140.0
+offset_bottom = 600.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Chrome" type="Control" parent="Stage/GameView" unique_id=1372996508]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Brand" type="HBoxContainer" parent="Stage/GameView/Chrome" unique_id=2053528059]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 24.0
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="TextureRect" parent="Stage/GameView/Chrome/Brand" unique_id=318458788]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("cherry")
+expand_mode = 1
+stretch_mode = 5
+metadata/palette_color = "ink"
+
+[node name="Title" type="Label" parent="Stage/GameView/Chrome/Brand" unique_id=2138667248]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Cherry Story"
+metadata/palette_color = "ink"
+
+[node name="Location" type="Label" parent="Stage/GameView/Chrome" unique_id=688435488]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -290.0
+offset_top = 30.0
+offset_right = -32.0
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 2
+metadata/palette_color = "muted"
+
+[node name="Caption" type="Label" parent="Stage/GameView/Chrome" unique_id=673296542]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 44.0
+offset_top = -33.0
+theme_override_font_sizes/font_size = 11
+text = "CHERRY STORY"
+metadata/palette_color = "muted"
+
+[node name="Footer" type="HBoxContainer" parent="Stage/GameView/Chrome" unique_id=1508006676]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -758.0
+offset_top = -42.0
+offset_right = -73.0
+offset_bottom = -8.0
+theme_override_constants/separation = 3
+
+[node name="Backlog" type="Button" parent="Stage/GameView/Chrome/Footer" unique_id=1486166436]
+custom_minimum_size = Vector2(83, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 14
+text = "回顾"
+icon = ExtResource("history")
+flat = true
+metadata/action = "backlog"
+
+[node name="Auto" type="Button" parent="Stage/GameView/Chrome/Footer" unique_id=1254350450]
+custom_minimum_size = Vector2(83, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 14
+text = "自动"
+icon = ExtResource("play")
+flat = true
+metadata/action = "auto"
+
+[node name="Save" type="Button" parent="Stage/GameView/Chrome/Footer" unique_id=1971697888]
+custom_minimum_size = Vector2(83, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 14
+text = "存档"
+icon = ExtResource("save")
+flat = true
+metadata/action = "save"
+
+[node name="Load" type="Button" parent="Stage/GameView/Chrome/Footer" unique_id=2078575845]
+custom_minimum_size = Vector2(83, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 14
+text = "读档"
+icon = ExtResource("load")
+flat = true
+metadata/action = "load"
+
+[node name="Hide" type="Button" parent="Stage/GameView/Chrome/Footer" unique_id=1491434]
+custom_minimum_size = Vector2(83, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 14
+text = "隐藏"
+icon = ExtResource("eye")
+flat = true
+metadata/action = "hide"
+
+[node name="Flow" type="Button" parent="Stage/GameView/Chrome/Footer" unique_id=1490285721]
+custom_minimum_size = Vector2(83, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 14
+text = "流程图"
+icon = ExtResource("flow")
+flat = true
+metadata/action = "flow"
+
+[node name="Skip" type="Button" parent="Stage/GameView/Chrome/Footer" unique_id=1363845234]
+custom_minimum_size = Vector2(83, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 14
+text = "快进"
+icon = ExtResource("fast-forward")
+flat = true
+metadata/action = "skip"
+
+[node name="Settings" type="Button" parent="Stage/GameView/Chrome/Footer" unique_id=1248551308]
+custom_minimum_size = Vector2(83, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 14
+text = "设置"
+icon = ExtResource("settings")
+flat = true
+metadata/action = "settings"
+
+[node name="Menus" parent="Stage" unique_id=1199706512 instance=ExtResource("menus")]
+
+[node name="Audio" type="Node" parent="." unique_id=806385022]
+
+[node name="Voice" type="AudioStreamPlayer" parent="Audio" unique_id=658878823]
+
+[node name="Replay" type="AudioStreamPlayer" parent="Audio" unique_id=1311860092]
+
+[node name="Music" type="AudioStreamPlayer" parent="Audio" unique_id=992433442]
+
+[node name="Effects" type="AudioStreamPlayer" parent="Audio" unique_id=1778560063]
+
+[node name="EditorPreview" type="Node" parent="."]
+script = ExtResource("editor_preview")
+kind = "presenter"
+
+[editable path="Stage/GameView/Dialogue"]
+[editable path="Stage/GameView/Narration"]
+[editable path="Stage/Menus"]

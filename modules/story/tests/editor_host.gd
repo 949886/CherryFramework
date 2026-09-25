@@ -5,6 +5,7 @@ extends EditorPlugin
 const SyntaxSuite = preload("syntax_suite.gd")
 const EditorSuite = preload("editor_suite.gd")
 const IconSuite = preload("icon_suite.gd")
+const GalgameEditorSuite = preload("galgame_editor_suite.gd")
 var module: StoryModule
 
 func _enter_tree() -> void:
@@ -15,6 +16,8 @@ func _enter_tree() -> void:
 		_probe.call_deferred()
 	elif "--story-icon-check" in OS.get_cmdline_user_args():
 		_icon_probe.call_deferred()
+	elif "--story-editor-render" in OS.get_cmdline_user_args():
+		_preview_probe.call_deferred()
 
 func _has_main_screen() -> bool:
 	return true
@@ -32,12 +35,17 @@ func _probe() -> void:
 	await get_tree().process_frame
 	var editor_result: Dictionary = await EditorSuite.new().run(self)
 	var syntax_result: Dictionary = await SyntaxSuite.new().run(self)
-	var failures: int = editor_result.failures + syntax_result.failures
-	print("Editor total: checks=%d failures=%d" % [editor_result.checks + syntax_result.checks, failures])
+	var galgame_result: Dictionary = await GalgameEditorSuite.new().run(self)
+	var failures: int = editor_result.failures + syntax_result.failures + galgame_result.failures
+	print("Editor total: checks=%d failures=%d" % [editor_result.checks + syntax_result.checks + galgame_result.checks, failures])
 	get_tree().quit(0 if failures == 0 else 1)
 
 func _icon_probe() -> void:
 	var result: Dictionary = await IconSuite.new().run(self)
+	get_tree().quit(0 if result.failures == 0 else 1)
+
+func _preview_probe() -> void:
+	var result: Dictionary = await GalgameEditorSuite.new().run(self)
 	get_tree().quit(0 if result.failures == 0 else 1)
 
 func _exit_tree() -> void:

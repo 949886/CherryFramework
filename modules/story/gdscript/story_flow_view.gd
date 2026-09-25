@@ -1,3 +1,4 @@
+@tool
 class_name StoryFlowView
 extends VBoxContainer
 ## One card per reachable script identity. Layout, edges and progress come from
@@ -205,7 +206,7 @@ func _wrapped(text: String, font_size: int) -> Label:
 	return label
 
 func _locate_current() -> void:
-	if presenter.archive.player.current_story == null: return
+	if presenter.archive.player == null or presenter.archive.player.current_story == null: return
 	var identity := presenter.archive.player.current_story.get_identity()
 	if cards.has(identity):
 		_select(identity)

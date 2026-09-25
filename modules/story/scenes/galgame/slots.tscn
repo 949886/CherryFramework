@@ -1,0 +1,42 @@
+[gd_scene format=3]
+[ext_resource type="PackedScene" path="menu_page.tscn" id="base"]
+[node name="Slots" instance=ExtResource("base")]
+
+[node name="Layout" type="VBoxContainer" parent="Sheet/Margin/Layout/Body"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="Grid" type="GridContainer" parent="Sheet/Margin/Layout/Body/Layout"]
+layout_mode = 2
+columns = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 16
+
+[node name="Navigation" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Pages" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Layout/Navigation"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Spacer" type="Control" parent="Sheet/Margin/Layout/Body/Layout/Navigation"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Count" type="Label" parent="Sheet/Margin/Layout/Body/Layout/Navigation"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+metadata/palette_color = "muted"
+
+[node name="Automatic" type="Button" parent="Sheet/Margin/Layout/Body/Layout/Navigation"]
+layout_mode = 2
+text = "读取自动存档"
+mouse_default_cursor_shape = 2

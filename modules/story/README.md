@@ -4,7 +4,8 @@ Godot 4 的 Markdown 剧情模块。入口是一个 `Story` 资源；当前实�
 
 ## 开始使用
 
-完整 galgame 界面请打开 `examples/galgame_demo.tscn` 按 F6；包含 16:9 舞台、
+可复用 Galgame Presenter 是 `scenes/galgame_presenter.tscn`，固定控件可在场景树中编辑。
+完整 galgame 示例请打开 `examples/galgame_demo.tscn` 按 F6；包含 16:9 舞台、
 24 栏位存读档、回顾、五类设置和以剧本文件为单位的流程图。
 定制入口、存档目录、配色与资源见 [Galgame presenter 接入说明](docs/GALGAME_PRESENTER.md)。
 下方的 `story_demo.tscn` 保留为基础播放器和多语言调试示例。

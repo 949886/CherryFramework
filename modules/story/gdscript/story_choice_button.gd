@@ -1,3 +1,4 @@
+@tool
 class_name StoryChoiceButton
 extends Button
 ## A single interpolated style covers mouse, keyboard and confirmation states.
@@ -17,41 +18,33 @@ var _from := Vector2.ZERO
 var _target := Vector2.ZERO
 var _box: StyleBoxFlat
 var _settle_elapsed := 0.0
-var glass: ColorRect
-var _capture: BackBufferCopy
+@export var glass: ColorRect
+@export var _capture: BackBufferCopy
+var _left_inset := 0.0
+var _right_inset := 0.0
 
-func _init() -> void:
-	# Both children draw BEFORE the Button. Its native glyphs remain sharp and
-	# keep native wrapping/input behavior; the shader only paints the backdrop.
-	_capture = BackBufferCopy.new()
-	_capture.show_behind_parent = true
-	_capture.copy_mode = BackBufferCopy.COPY_MODE_DISABLED
-	add_child(_capture)
-	glass = ColorRect.new()
-	glass.show_behind_parent = true
-	glass.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	glass.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	glass.material = ShaderMaterial.new()
-	(glass.material as ShaderMaterial).shader = preload("../resources/dialogue_glass.gdshader")
-	glass.hide()
-	add_child(glass)
+func _ready() -> void:
+	# The scene draws these children behind the native button glyphs.
 	resized.connect(func():
 		(glass.material as ShaderMaterial).set_shader_parameter("panel_size", size))
 
 func configure(skin: StorySkin) -> void:
+	glass.material = glass.material.duplicate()
 	_skin = skin
 	_motion = skin.preferences.schema.choice_motion
 	_reduced = skin.preferences.values.motion == "reduced"
 	glass.visible = bool(skin.preferences.values.glass)
 	_capture.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT if glass.visible else BackBufferCopy.COPY_MODE_DISABLED
-	skin.style_glass(glass.material as ShaderMaterial, skin.colors.paper, size, 8.0)
-	if _box == null:
-		_box = StorySkin.box(skin.colors.paper, skin.colors.line, 8, 12)
+	if _box == null or get_theme_stylebox("normal") != _box:
+		_box = get_theme_stylebox("normal").duplicate() as StyleBoxFlat
+		_left_inset = _box.content_margin_left
+		_right_inset = _box.content_margin_right
 		# Sharing one instance across states avoids the engine replacing the
 		# animated style with an instantaneous hover/pressed/disabled style.
 		for state in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
 			add_theme_stylebox_override(state, _box)
 		add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	skin.style_glass(glass.material as ShaderMaterial, skin.colors.paper, size, float(_box.corner_radius_top_left))
 	if _reduced:
 		reveal = 1.0
 		emphasis = _target
@@ -96,8 +89,8 @@ func _draw_state() -> void:
 		(glass.material as ShaderMaterial).set_shader_parameter("tint", Color(fill, float(_skin.preferences.values.glass_tint) / 100.0))
 	var shift := 0.0 if _reduced else float(_motion.content_shift) * emphasis.x
 	# Equal/opposite inset changes keep the minimum width and hit area fixed.
-	_box.content_margin_left = 12.0 + shift
-	_box.content_margin_right = 12.0 - shift
+	_box.content_margin_left = _left_inset + shift
+	_box.content_margin_right = _right_inset - shift
 	var ink: Color = _skin.colors.ink.lerp(_skin.colors.accent, highlight)
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color"]:
 		add_theme_color_override(state, ink)

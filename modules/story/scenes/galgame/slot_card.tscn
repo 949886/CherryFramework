@@ -1,0 +1,54 @@
+[gd_scene format=3]
+[ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
+[ext_resource type="Script" path="../../editor/story_scene_preview.gd" id="editor_preview"]
+
+[node name="SlotCard" type="Button"]
+theme = ExtResource("editor_theme")
+custom_minimum_size = Vector2(370, 220)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_default_cursor_shape = 2
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 14.0
+offset_top = 12.0
+offset_right = -14.0
+offset_bottom = -12.0
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 13
+metadata/palette_color = "accent"
+
+[node name="Image" type="TextureRect" parent="Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 106)
+size_flags_vertical = 3
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Text" type="Label" parent="Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 16
+metadata/palette_color = "ink"
+text_overrun_behavior = 3
+
+[node name="Stamp" type="Label" parent="Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 12
+metadata/palette_color = "muted"
+
+[node name="EditorPreview" type="Node" parent="."]
+script = ExtResource("editor_preview")
+kind = "slot"

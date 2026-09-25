@@ -1,3 +1,4 @@
+@tool
 class_name StoryGalgameMenus
 extends Control
 ## Cherry owns route lifetime, covered input/focus, modal scrims and transitions.
@@ -6,12 +7,12 @@ extends Control
 const PAGES = preload("../resources/galgame_pages.tres")
 var presenter: StoryGalgamePresenter
 var skin: StorySkin
-var navigator: Navigator
+@export var navigator: Navigator
 var section_id := "text"
 var slot_page := 0
-var toast: PanelContainer
+@export var toast: PanelContainer
 var _toast_generation := 0
-var _input_blocker: Control
+@export var _input_blocker: Control
 var is_open: bool:
 	get: return navigator != null and (navigator.route_count > 1 or navigator.scheduled_route_count > 1)
 var active_page: StoryMenuPage:
@@ -33,43 +34,19 @@ var confirmation: StoryConfirmationPage:
 func configure(owner_presenter: StoryGalgamePresenter) -> void:
 	presenter = owner_presenter
 	skin = presenter.skin
-	size = presenter.stage_size
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	navigator = Navigator.new()
-	navigator.name = "StoryNavigator"
-	navigator.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(navigator)
-	navigator.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Preserve the existing native presentation and VM references in a retained
-	# gameplay route. All coordinates remain relative to the same virtual stage.
-	var gameplay_nodes := presenter.stage.get_children()
+	# Move the already-instantiated game view into Cherry's retained root route.
+	# No controls are rebuilt; exported node references stay valid after the move.
 	navigator.push_definition_configured(_definition("gameplay"), func(root_page):
-		for node in gameplay_nodes:
-			if node != self: node.reparent(root_page, false))
-	_input_blocker = Control.new()
-	_input_blocker.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_input_blocker)
-	_input_blocker.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_input_blocker.hide()
+		presenter.game_view.reparent(root_page, false))
 	navigator.operation_queue_changed.connect(_navigation_changed)
 	navigator.navigation_error.connect(func(_code, message): notify_user(message))
-	toast = PanelContainer.new()
-	toast.position = Vector2(340, 80)
-	toast.size = Vector2(600, 60)
-	toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(toast)
-	var message := Label.new()
-	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	message.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	toast.add_child(message)
-	toast.hide()
 	update_skin("")
 
 func _definition(identity: String) -> PageDefinition:
 	return PAGES.get_meta("pages").get(identity) as PageDefinition
 
 func open(target: String) -> void:
+	if Engine.is_editor_hint(): return
 	if navigator.is_operating: return
 	if active_page != null and page == target:
 		if target == "settings": active_page.select_section(section_id)
@@ -94,9 +71,11 @@ func _prepare_transition(incoming: NavigationPage) -> void:
 			(incoming.route.transition as TweenNavigationTransition).duration = 0.0
 
 func back() -> void:
+	if Engine.is_editor_hint(): return
 	navigator.maybe_pop()
 
 func close() -> void:
+	if Engine.is_editor_hint(): return
 	# Load/restart closes the complete flow; ordinary Back pops just one route.
 	navigator.pop_until(func(entry): return entry == navigator.first_route)
 
@@ -106,6 +85,7 @@ func _navigation_changed(_pending: int) -> void:
 	if not is_open: presenter.replay_player.stop()
 
 func _input(_event: InputEvent) -> void:
+	if Engine.is_editor_hint(): return
 	# Both scenes remain mounted during transitions. Gate keyboard events too,
 	# until Cherry commits the new route and applies its covered-input policy.
 	if navigator != null and navigator.is_operating:
@@ -113,7 +93,6 @@ func _input(_event: InputEvent) -> void:
 
 func update_skin(_key: String) -> void:
 	theme = skin.theme
-	toast.add_theme_stylebox_override("panel", StorySkin.box(skin.colors.paper, skin.colors.line, 12, 16))
 	for entry in navigator.routes():
 		if entry.page is StoryMenuPage: entry.page.update_skin()
 		if entry.transition is TweenNavigationTransition and not navigator.is_transitioning:
@@ -122,6 +101,7 @@ func update_skin(_key: String) -> void:
 	if not presenter.preferences.last_error.is_empty(): notify_user(presenter.preferences.last_error)
 
 func confirm(title: String, message: String, action: Callable) -> void:
+	if Engine.is_editor_hint(): return
 	if navigator.is_operating or confirmation != null or not is_open: return
 	var entry := navigator.push_definition_configured(_definition("confirm"), func(dialog: StoryConfirmationPage):
 		_prepare_transition(dialog)
@@ -134,6 +114,7 @@ func dismiss_confirmation() -> bool:
 	return navigator.maybe_pop(false)
 
 func notify_user(message: String) -> void:
+	if Engine.is_editor_hint(): return
 	_toast_generation += 1
 	var generation := _toast_generation
 	(toast.get_child(0) as Label).text = message

@@ -1,0 +1,129 @@
+[gd_scene format=3]
+[ext_resource type="Script" path="../../gdscript/story_dialogue_box.gd" id="script"]
+[ext_resource type="Shader" path="../../resources/dialogue_glass.gdshader" id="shader"]
+[ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
+[ext_resource type="Script" path="../../editor/story_scene_preview.gd" id="editor_preview"]
+
+[sub_resource type="ShaderMaterial" id="glass"]
+resource_local_to_scene = true
+shader = ExtResource("shader")
+[sub_resource type="StyleBoxFlat" id="panel"]
+resource_local_to_scene = true
+bg_color = Color(1, 0.976, 0.969, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.92, 0.84, 0.86, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_left = 18
+corner_radius_bottom_right = 18
+[sub_resource type="StyleBoxFlat" id="nameplate"]
+resource_local_to_scene = true
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96, 0.85, 0.89, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_left = 10
+corner_radius_bottom_right = 10
+
+[node name="DialogueBox" type="PanelContainer" node_paths=PackedStringArray("text", "speaker", "roman", "voice", "voice_row", "voice_icon", "nameplate", "glass", "content")]
+theme = ExtResource("editor_theme")
+custom_minimum_size = Vector2(0, 185)
+offset_right = 1196.0
+offset_bottom = 185.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("panel")
+script = ExtResource("script")
+text = NodePath("Margin/Content/Text")
+speaker = NodePath("Overlay/Nameplate/Names/Speaker")
+roman = NodePath("Overlay/Nameplate/Names/Roman")
+voice = NodePath("Margin/Content/Voice/Caption")
+voice_row = NodePath("Margin/Content/Voice")
+voice_icon = NodePath("Margin/Content/Voice/Icon")
+nameplate = NodePath("Overlay/Nameplate")
+glass = NodePath("Glass")
+content = NodePath("Margin/Content")
+
+[node name="Capture" type="BackBufferCopy" parent="."]
+copy_mode = 2
+
+[node name="Glass" type="ColorRect" parent="."]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+material = SubResource("glass")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 34
+theme_override_constants/margin_right = 34
+theme_override_constants/margin_top = 34
+theme_override_constants/margin_bottom = 18
+
+[node name="Content" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Text" type="RichTextLabel" parent="Margin/Content"]
+theme_type_variation = "StoryBody"
+layout_mode = 2
+custom_minimum_size = Vector2(0, 100)
+size_flags_vertical = 3
+mouse_filter = 1
+bbcode_enabled = true
+
+[node name="Voice" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="TextureRect" parent="Margin/Content/Voice"]
+layout_mode = 2
+custom_minimum_size = Vector2(16, 16)
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Caption" type="Label" parent="Margin/Content/Voice"]
+theme_type_variation = "StoryAccent"
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "VOICE"
+
+[node name="Overlay" type="Control" parent="."]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Nameplate" type="PanelContainer" parent="Overlay"]
+layout_mode = 0
+offset_left = 26.0
+offset_top = -21.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("nameplate")
+
+[node name="Names" type="HBoxContainer" parent="Overlay/Nameplate"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Speaker" type="Label" parent="Overlay/Nameplate/Names"]
+theme_type_variation = "StorySpeaker"
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "角色"
+
+[node name="Roman" type="Label" parent="Overlay/Nameplate/Names"]
+theme_type_variation = "StorySpeaker"
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "CHARACTER"
+
+[node name="EditorPreview" type="Node" parent="."]
+script = ExtResource("editor_preview")
+kind = "dialogue"

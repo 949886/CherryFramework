@@ -1,3 +1,4 @@
+@tool
 class_name StoryPreferences
 extends RefCounted
 ## Settings are described once in a JSON schema. Both the editor-facing model
@@ -10,6 +11,9 @@ var schema: Dictionary
 var values: Dictionary = {}
 var path := "user://cherry_galgame/settings.cfg"
 var last_error := ""
+## Editor preview contexts explicitly opt out of every persistence path,
+## including reset_section(), which calls save_settings() directly.
+var persistence_enabled := true
 
 func _init() -> void:
 	var source := (get_script() as Script).resource_path.get_base_dir().path_join(SCHEMA_PATH)
@@ -91,6 +95,7 @@ func load_settings() -> Error:
 	return OK
 
 func save_settings() -> Error:
+	if not persistence_enabled: return OK
 	var config := ConfigFile.new()
 	for key in values:
 		config.set_value("settings", key, values[key])
