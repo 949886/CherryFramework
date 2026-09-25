@@ -1,14 +1,83 @@
 [gd_scene format=3]
-[ext_resource type="Texture2D" path="../../icons/galgame/restart.svg" id="icon_restart"]
+[ext_resource type="Texture2D" path="../../icons/galgame/back.svg" id="icon_back"]
 
-[ext_resource type="PackedScene" path="menu_page.tscn" id="base"]
+[ext_resource type="Script" path="../../gdscript/story_menu_page.gd" id="script"]
+[ext_resource type="Resource" path="../../resources/galgame_page_transition.tres" id="transition"]
+[ext_resource type="PackedScene" path="dialogue_preview.tscn" id="preview"]
+
+[ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
+
+[ext_resource type="Texture2D" path="../../icons/galgame/display.svg" id="icon_display"]
+[ext_resource type="Texture2D" path="../../icons/galgame/reading.svg" id="icon_reading"]
+[ext_resource type="Texture2D" path="../../icons/galgame/restart.svg" id="icon_restart"]
+[ext_resource type="Texture2D" path="../../icons/galgame/system.svg" id="icon_system"]
+[ext_resource type="Texture2D" path="../../icons/galgame/text.svg" id="icon_text"]
+[ext_resource type="Texture2D" path="../../icons/galgame/voice.svg" id="icon_voice"]
+[ext_resource type="Texture2D" path="../../icons/galgame/volume.svg" id="icon_volume"]
 
 [sub_resource type="StyleBoxEmpty" id="empty"]
 
-[node name="Settings" instance=ExtResource("base")]
+[sub_resource type="ButtonGroup" id="categories"]
+resource_local_to_scene = true
+
+[node name="Settings" type="Control"]
+theme = ExtResource("editor_theme")
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("script")
+presentation = 1
+transition = ExtResource("transition")
 navigation_path = "ui://cherry/story/settings"
 page = "settings"
 title = "设置"
+
+[node name="Sheet" type="PanelContainer" parent="."]
+theme_type_variation = "StorySheet"
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 26.0
+offset_top = 20.0
+offset_right = -26.0
+offset_bottom = -20.0
+
+[node name="Margin" type="MarginContainer" parent="Sheet"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 28
+
+[node name="Layout" type="VBoxContainer" parent="Sheet/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Header" type="HBoxContainer" parent="Sheet/Margin/Layout"]
+layout_mode = 2
+
+[node name="Heading" type="Label" parent="Sheet/Margin/Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
+text = "设置"
+
+[node name="Back" type="Button" parent="Sheet/Margin/Layout/Header"]
+icon = ExtResource("icon_back")
+layout_mode = 2
+custom_minimum_size = Vector2(104, 42)
+mouse_default_cursor_shape = 2
+text = "返回"
+
+[node name="Separator" type="HSeparator" parent="Sheet/Margin/Layout"]
+layout_mode = 2
+
+[node name="Body" type="Control" parent="Sheet/Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
 
 [node name="Split" type="HBoxContainer" parent="Sheet/Margin/Layout/Body"]
 layout_mode = 1
@@ -45,5 +114,1075 @@ size_flags_horizontal = 3
 tabs_visible = false
 theme_override_styles/panel = SubResource("empty")
 
-[node name="Heading" parent="Sheet/Margin/Layout/Header"]
-text = "设置"
+[node name="Text" type="Button" parent="Sheet/Margin/Layout/Body/Split/Sidebar/Categories"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 52)
+text = "文字样式"
+icon = ExtResource("icon_text")
+toggle_mode = true
+button_group = SubResource("categories")
+button_pressed = true
+mouse_default_cursor_shape = 2
+metadata/section_id = "text"
+
+[node name="Text" type="ScrollContainer" parent="Sheet/Margin/Layout/Body/Split/Pages"]
+layout_mode = 2
+visible = true
+horizontal_scroll_mode = 0
+metadata/section_id = "text"
+
+[node name="Content" type="VBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Text"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content"]
+layout_mode = 2
+text = "文字样式"
+theme_override_font_sizes/font_size = 22
+
+[node name="Preview" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content" instance=ExtResource("preview")]
+layout_mode = 2
+metadata/dialogue_preview = true
+
+[node name="Font" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "font"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/Font"]
+layout_mode = 2
+text = "正文字体"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="OptionButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/Font"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+item_count = 3
+selected = 0
+popup/item_0/text = "清晰黑体"
+popup/item_0/id = 0
+popup/item_1/text = "柔和圆体"
+popup/item_1/id = 1
+popup/item_2/text = "经典明朝"
+popup/item_2/id = 2
+
+[node name="FontSize" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "font_size"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/FontSize"]
+layout_mode = 2
+text = "文字大小"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/FontSize"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 16
+max_value = 36
+step = 1
+value = 23
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/FontSize"]
+layout_mode = 2
+text = "23 px"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="Weight" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "weight"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/Weight"]
+layout_mode = 2
+text = "文字粗细"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="OptionButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/Weight"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+item_count = 3
+selected = 0
+popup/item_0/text = "常规"
+popup/item_0/id = 0
+popup/item_1/text = "中等"
+popup/item_1/id = 1
+popup/item_2/text = "加粗"
+popup/item_2/id = 2
+
+[node name="LineHeight" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "line_height"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/LineHeight"]
+layout_mode = 2
+text = "行距"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/LineHeight"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 1.2
+max_value = 2.2
+step = 0.05
+value = 1.5
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/LineHeight"]
+layout_mode = 2
+text = "1.5 倍"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="LetterSpacing" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "letter_spacing"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/LetterSpacing"]
+layout_mode = 2
+text = "字间距"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/LetterSpacing"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 0
+max_value = 4
+step = 0.5
+value = 0.5
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/LetterSpacing"]
+layout_mode = 2
+text = "0.5 px"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="TextEffect" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "text_effect"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/TextEffect"]
+layout_mode = 2
+text = "文字效果"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="OptionButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/TextEffect"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+item_count = 3
+selected = 0
+popup/item_0/text = "无"
+popup/item_0/id = 0
+popup/item_1/text = "柔和阴影"
+popup/item_1/id = 1
+popup/item_2/text = "描边"
+popup/item_2/id = 2
+
+[node name="ThemeText" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "theme_text"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/ThemeText"]
+layout_mode = 2
+text = "文字颜色跟随配色"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/ThemeText"]
+layout_mode = 2
+metadata/setting_control = true
+text = "开启"
+button_pressed = true
+
+[node name="TextColor" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "text_color"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/TextColor"]
+layout_mode = 2
+text = "自定义文字颜色"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="ColorPickerButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/TextColor"]
+layout_mode = 2
+metadata/setting_control = true
+custom_minimum_size = Vector2(180, 32)
+edit_alpha = false
+color = Color(0.396078431372549, 0.3254901960784314, 0.36470588235294116, 1)
+
+[node name="Reading" type="Button" parent="Sheet/Margin/Layout/Body/Split/Sidebar/Categories"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 52)
+text = "阅读播放"
+icon = ExtResource("icon_reading")
+toggle_mode = true
+button_group = SubResource("categories")
+button_pressed = false
+mouse_default_cursor_shape = 2
+metadata/section_id = "reading"
+
+[node name="Reading" type="ScrollContainer" parent="Sheet/Margin/Layout/Body/Split/Pages"]
+layout_mode = 2
+visible = false
+horizontal_scroll_mode = 0
+metadata/section_id = "reading"
+
+[node name="Content" type="VBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content"]
+layout_mode = 2
+text = "阅读播放"
+theme_override_font_sizes/font_size = 22
+
+[node name="Preview" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content" instance=ExtResource("preview")]
+layout_mode = 2
+metadata/dialogue_preview = true
+
+[node name="Replay" type="Button" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content"]
+layout_mode = 2
+text = "重播文字预览"
+icon = ExtResource("icon_restart")
+mouse_default_cursor_shape = 2
+metadata/action = "replay_preview"
+
+[node name="Speed" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "speed"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/Speed"]
+layout_mode = 2
+text = "文字显示速度"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/Speed"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 5
+max_value = 100
+step = 1
+value = 30
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/Speed"]
+layout_mode = 2
+text = "30 字/秒"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="Instant" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "instant"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/Instant"]
+layout_mode = 2
+text = "立即显示整句"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/Instant"]
+layout_mode = 2
+metadata/setting_control = true
+text = "关闭"
+button_pressed = false
+
+[node name="AutoDelay" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "auto_delay"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/AutoDelay"]
+layout_mode = 2
+text = "自动播放间隔"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/AutoDelay"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 0.5
+max_value = 10
+step = 0.5
+value = 3.5
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/AutoDelay"]
+layout_mode = 2
+text = "3.5 秒"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="WaitVoice" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "wait_voice"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/WaitVoice"]
+layout_mode = 2
+text = "自动播放等待语音结束"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/WaitVoice"]
+layout_mode = 2
+metadata/setting_control = true
+text = "开启"
+button_pressed = true
+
+[node name="SkipUnread" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "skip_unread"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/SkipUnread"]
+layout_mode = 2
+text = "快进未读内容"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/SkipUnread"]
+layout_mode = 2
+metadata/setting_control = true
+text = "关闭"
+button_pressed = false
+
+[node name="SkipSpeed" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "skip_speed"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/SkipSpeed"]
+layout_mode = 2
+text = "快进倍率"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/SkipSpeed"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 2
+max_value = 30
+step = 1
+value = 8
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/SkipSpeed"]
+layout_mode = 2
+text = "8 倍"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="KeepVoice" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "keep_voice"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/KeepVoice"]
+layout_mode = 2
+text = "推进对白后保留语音"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/KeepVoice"]
+layout_mode = 2
+metadata/setting_control = true
+text = "关闭"
+button_pressed = false
+
+[node name="Sound" type="Button" parent="Sheet/Margin/Layout/Body/Split/Sidebar/Categories"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 52)
+text = "声音"
+icon = ExtResource("icon_volume")
+toggle_mode = true
+button_group = SubResource("categories")
+button_pressed = false
+mouse_default_cursor_shape = 2
+metadata/section_id = "sound"
+
+[node name="Sound" type="ScrollContainer" parent="Sheet/Margin/Layout/Body/Split/Pages"]
+layout_mode = 2
+visible = false
+horizontal_scroll_mode = 0
+metadata/section_id = "sound"
+
+[node name="Content" type="VBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content"]
+layout_mode = 2
+text = "声音"
+theme_override_font_sizes/font_size = 22
+
+[node name="Master" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "master"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Master"]
+layout_mode = 2
+text = "总音量"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Master"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 0
+max_value = 100
+step = 1
+value = 80
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Master"]
+layout_mode = 2
+text = "80 %"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="Music" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "music"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Music"]
+layout_mode = 2
+text = "背景音乐"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Music"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 0
+max_value = 100
+step = 1
+value = 55
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Music"]
+layout_mode = 2
+text = "55 %"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="Voice" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "voice"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Voice"]
+layout_mode = 2
+text = "角色语音"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Voice"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 0
+max_value = 100
+step = 1
+value = 90
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Voice"]
+layout_mode = 2
+text = "90 %"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="Effects" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "effects"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Effects"]
+layout_mode = 2
+text = "音效"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Effects"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 0
+max_value = 100
+step = 1
+value = 60
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Effects"]
+layout_mode = 2
+text = "60 %"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="Mute" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "mute"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Mute"]
+layout_mode = 2
+text = "静音"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Mute"]
+layout_mode = 2
+metadata/setting_control = true
+text = "关闭"
+button_pressed = false
+
+[node name="DuckMusic" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "duck_music"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/DuckMusic"]
+layout_mode = 2
+text = "播放语音时降低背景音乐"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/DuckMusic"]
+layout_mode = 2
+metadata/setting_control = true
+text = "开启"
+button_pressed = true
+
+[node name="SamplesTitle" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content"]
+layout_mode = 2
+text = "试听"
+theme_override_font_sizes/font_size = 20
+
+[node name="Samples" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content"]
+layout_mode = 2
+
+
+[node name="Voice" type="Button" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Samples"]
+layout_mode = 2
+text = "角色语音"
+icon = ExtResource("icon_voice")
+mouse_default_cursor_shape = 2
+metadata/action = "replay_voice"
+
+[node name="Effect" type="Button" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Samples"]
+layout_mode = 2
+text = "界面音效"
+icon = ExtResource("icon_volume")
+mouse_default_cursor_shape = 2
+metadata/action = "replay_effect"
+
+[node name="Display" type="Button" parent="Sheet/Margin/Layout/Body/Split/Sidebar/Categories"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 52)
+text = "画面与界面"
+icon = ExtResource("icon_display")
+toggle_mode = true
+button_group = SubResource("categories")
+button_pressed = false
+mouse_default_cursor_shape = 2
+metadata/section_id = "display"
+
+[node name="Display" type="ScrollContainer" parent="Sheet/Margin/Layout/Body/Split/Pages"]
+layout_mode = 2
+visible = false
+horizontal_scroll_mode = 0
+metadata/section_id = "display"
+
+[node name="Content" type="VBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+text = "画面与界面"
+theme_override_font_sizes/font_size = 22
+
+[node name="Preview" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content" instance=ExtResource("preview")]
+layout_mode = 2
+metadata/dialogue_preview = true
+
+[node name="Palette" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "palette"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Palette"]
+layout_mode = 2
+text = "界面配色"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="OptionButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Palette"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+item_count = 9
+selected = 0
+popup/item_0/text = "蜜桃苏打"
+popup/item_0/id = 0
+popup/item_1/text = "薄荷晴空"
+popup/item_1/id = 1
+popup/item_2/text = "海盐蓝"
+popup/item_2/id = 2
+popup/item_3/text = "青柠奶霜"
+popup/item_3/id = 3
+popup/item_4/text = "薰衣草雾"
+popup/item_4/id = 4
+popup/item_5/text = "杏子奶油"
+popup/item_5/id = 5
+popup/item_6/text = "樱桃奶油"
+popup/item_6/id = 6
+popup/item_7/text = "暮夜蔷薇"
+popup/item_7/id = 7
+popup/item_8/text = "跟随系统"
+popup/item_8/id = 8
+
+[node name="Opacity" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "opacity"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Opacity"]
+layout_mode = 2
+text = "纯色模式不透明度"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Opacity"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 40
+max_value = 100
+step = 1
+value = 100
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Opacity"]
+layout_mode = 2
+text = "100 %"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="VoiceBadge" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "voice_badge"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/VoiceBadge"]
+layout_mode = 2
+text = "显示语音标记"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/VoiceBadge"]
+layout_mode = 2
+metadata/setting_control = true
+text = "开启"
+button_pressed = true
+
+[node name="WindowMode" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "window_mode"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/WindowMode"]
+layout_mode = 2
+text = "显示模式"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="OptionButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/WindowMode"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+item_count = 3
+selected = 0
+popup/item_0/text = "窗口模式"
+popup/item_0/id = 0
+popup/item_1/text = "无边框全屏"
+popup/item_1/id = 1
+popup/item_2/text = "独占全屏"
+popup/item_2/id = 2
+
+[node name="Resolution" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "resolution"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Resolution"]
+layout_mode = 2
+text = "窗口分辨率"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="OptionButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Resolution"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+item_count = 4
+selected = 0
+popup/item_0/text = "1280 × 720"
+popup/item_0/id = 0
+popup/item_1/text = "1600 × 900"
+popup/item_1/id = 1
+popup/item_2/text = "1920 × 1080"
+popup/item_2/id = 2
+popup/item_3/text = "2560 × 1440"
+popup/item_3/id = 3
+
+[node name="Motion" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "motion"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Motion"]
+layout_mode = 2
+text = "界面动效"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="OptionButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Motion"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+item_count = 2
+selected = 0
+popup/item_0/text = "标准"
+popup/item_0/id = 0
+popup/item_1/text = "减少动态效果"
+popup/item_1/id = 1
+
+[node name="Glass" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "glass"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Glass"]
+layout_mode = 2
+text = "启用毛玻璃"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Glass"]
+layout_mode = 2
+metadata/setting_control = true
+text = "关闭"
+button_pressed = false
+
+[node name="GlassBlur" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "glass_blur"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassBlur"]
+layout_mode = 2
+text = "模糊强度"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassBlur"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 0
+max_value = 40
+step = 1
+value = 22
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassBlur"]
+layout_mode = 2
+text = "22 px"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="GlassTint" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "glass_tint"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassTint"]
+layout_mode = 2
+text = "玻璃底色浓度"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassTint"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 15
+max_value = 95
+step = 1
+value = 70
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassTint"]
+layout_mode = 2
+text = "70 %"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="GlassSaturation" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "glass_saturation"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassSaturation"]
+layout_mode = 2
+text = "背景饱和度"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassSaturation"]
+layout_mode = 2
+metadata/setting_control = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 50
+max_value = 200
+step = 1
+value = 145
+
+[node name="Number" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassSaturation"]
+layout_mode = 2
+text = "145 %"
+theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(92, 0)
+metadata/palette_color = "muted"
+metadata/setting_number = true
+
+[node name="System" type="Button" parent="Sheet/Margin/Layout/Body/Split/Sidebar/Categories"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 52)
+text = "操作与存档"
+icon = ExtResource("icon_system")
+toggle_mode = true
+button_group = SubResource("categories")
+button_pressed = false
+mouse_default_cursor_shape = 2
+metadata/section_id = "system"
+
+[node name="System" type="ScrollContainer" parent="Sheet/Margin/Layout/Body/Split/Pages"]
+layout_mode = 2
+visible = false
+horizontal_scroll_mode = 0
+metadata/section_id = "system"
+
+[node name="Content" type="VBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/System"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content"]
+layout_mode = 2
+text = "操作与存档"
+theme_override_font_sizes/font_size = 22
+
+[node name="ConfirmOverwrite" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "confirm_overwrite"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content/ConfirmOverwrite"]
+layout_mode = 2
+text = "覆盖存档前确认"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content/ConfirmOverwrite"]
+layout_mode = 2
+metadata/setting_control = true
+text = "开启"
+button_pressed = true
+
+[node name="ConfirmLoad" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "confirm_load"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content/ConfirmLoad"]
+layout_mode = 2
+text = "读取存档前确认"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content/ConfirmLoad"]
+layout_mode = 2
+metadata/setting_control = true
+text = "开启"
+button_pressed = true
+
+[node name="Autosave" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "autosave"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content/Autosave"]
+layout_mode = 2
+text = "遇到选项时自动存档"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content/Autosave"]
+layout_mode = 2
+metadata/setting_control = true
+text = "开启"
+button_pressed = true
+
+[node name="PauseBlur" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "pause_blur"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content/PauseBlur"]
+layout_mode = 2
+text = "失去焦点时暂停"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content/PauseBlur"]
+layout_mode = 2
+metadata/setting_control = true
+text = "开启"
+button_pressed = true
+
+[node name="Keyboard" type="HBoxContainer" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_constants/separation = 18
+metadata/setting_key = "keyboard"
+
+[node name="Label" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content/Keyboard"]
+layout_mode = 2
+text = "启用键盘快捷键"
+theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(215, 0)
+
+[node name="Value" type="CheckButton" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content/Keyboard"]
+layout_mode = 2
+metadata/setting_control = true
+text = "开启"
+button_pressed = true
+
+[node name="ShortcutsTitle" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content"]
+layout_mode = 2
+text = "快捷键"
+theme_override_font_sizes/font_size = 20
+
+[node name="Shortcuts" type="Label" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content"]
+layout_mode = 2
+text = "空格 / Enter / 左键：推进    Esc：返回\nA：自动    Ctrl：切换快进    H：隐藏\nS：存档    L：读档    B：回顾    M：流程图"
+theme_override_font_sizes/font_size = 16
+metadata/palette_color = "muted"
+
+[node name="Restart" type="Button" parent="Sheet/Margin/Layout/Body/Split/Pages/System/Content"]
+layout_mode = 2
+text = "重新开始故事"
+icon = ExtResource("icon_restart")
+mouse_default_cursor_shape = 2
+metadata/action = "restart_story"

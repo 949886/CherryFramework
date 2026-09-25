@@ -54,6 +54,7 @@ func _run() -> void:
 	authored.free()
 	var presenter := customized.instantiate() as StoryGalgamePresenter
 	presenter.save_directory = "user://galgame_scene_test_%d" % OS.get_process_id()
+	_customize_settings(presenter)
 	var untouched := packed.instantiate() as StoryGalgamePresenter
 	check(untouched.dialogue.offset_left == 42 and untouched.dialogue.nameplate.position.x == 26, "base scene unchanged by instance edits")
 	check(untouched.dialogue.glass.material != presenter.dialogue.glass.material, "glass material is local to each instance")
@@ -104,7 +105,38 @@ func _run() -> void:
 	check(presenter.dialogue.get_theme_stylebox("panel").corner_radius_top_left == 26, "palette and glass preserve authored corners")
 	presenter.open_menu("settings")
 	await settle()
-	var preview := presenter.menu.active_page.preview
+	var settings := presenter.menu.active_page
+	check(settings.rows.size() == presenter.preferences.fields().size(), "all authored fields bind before visiting other tabs")
+	check(settings.rows.font_size.name == "CustomSize" and settings.rows.font_size.get_node("Label").text == "定制字号", "authored row name and label survive runtime binding")
+	check(settings._controls.font_size.name == "CustomSlider" and settings.rows.font_size.get_theme_constant("separation") == 27, "custom control names and row layout remain intact")
+	check(settings._tab_buttons.text.name == "CustomCategory" and settings._tab_buttons.text.text == "定制文字", "category labels and names remain scene owned")
+	check(settings.settings_tabs.current_tab == 1, "initial section follows metadata after scene tabs reorder")
+	var size_control: HSlider = settings._controls.font_size
+	size_control.value = 29
+	check(presenter.preferences.values.font_size == 29 and settings._numbers.font_size.text == str(presenter.preferences.values.font_size) + " px", "authored slider updates preferences and value label")
+	presenter.preferences.reset_section("text")
+	check(size_control.value == 23 and settings._controls.font_size == size_control, "reset updates existing authored slider")
+	settings._tab_buttons.display.pressed.emit()
+	check(settings.settings_tabs.current_tab == 0, "selection uses authored tab order instead of schema order")
+	var glass_control: CheckButton = settings._controls.glass
+	glass_control.button_pressed = false
+	check(not presenter.preferences.values.glass and not settings.rows.glass_blur.visible, "authored checkbox hides conditional settings")
+	glass_control.button_pressed = true
+	check(presenter.preferences.values.glass and settings.rows.glass_blur.visible, "authored checkbox reveals conditional settings")
+	var palette_control: OptionButton = settings._controls.palette
+	palette_control.select(0)
+	palette_control.item_selected.emit(0)
+	check(presenter.preferences.values.palette == palette_control.get_item_metadata(0), "authored selector writes schema option identity")
+	settings.select_section("text")
+	settings._controls.theme_text.button_pressed = false
+	check(settings.rows.text_color.visible, "custom text color row follows authored toggle")
+	var color_control: ColorPickerButton = settings._controls.text_color
+	color_control.color = Color("#123456")
+	color_control.color_changed.emit(color_control.color)
+	check(presenter.preferences.values.text_color == "#123456", "authored color picker writes preferences")
+	presenter.preferences.reset_section("text")
+	await settle()
+	var preview := settings.preview
 	check(preview.nameplate.position.x == 48, "preview preserves authored nameplate placement")
 	check(preview.text.get_parent().get_parent().get_theme_constant("margin_left") == 48, "preview preserves authored text inset")
 	check(preview.size == presenter.dialogue.size and preview.text.text == presenter.dialogue.text.text, "preview reproduces actual dialogue geometry and text")
@@ -116,3 +148,47 @@ func _run() -> void:
 	await settle()
 	print("Galgame scene reuse: %d passed, %d failed" % [checks - failures, failures])
 	quit(1 if failures else 0)
+
+func _customize_settings(presenter: StoryGalgamePresenter) -> void:
+	var packed := load(module_root.path_join("scenes/galgame/settings.tscn")) as PackedScene
+	check(packed.get_state().get_base_scene_state() == null, "settings is an independent scene without inherited page state")
+	var view := packed.instantiate() as StoryMenuPage
+	var split := view.get_node("Sheet/Margin/Layout/Body/Split")
+	var categories := split.get_node("Sidebar/Categories")
+	var pages := split.get_node("Pages")
+	var schema: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(module_root.path_join("resources/galgame_settings.json")))
+	check(categories.get_child_count() == schema.sections.size() and pages.get_child_count() == schema.sections.size(), "all sidebar categories and pages exist before ready")
+	var authored_rows := {}
+	for node in pages.find_children("*", "", true, false):
+		if node.has_meta("setting_key"): authored_rows[node.get_meta("setting_key")] = node
+	for section in schema.sections:
+		for field in section.fields:
+			check(authored_rows.has(field.key) and authored_rows[field.key].owner == view, "editable settings row exists before ready: " + field.key)
+		var scroll: Node
+		for child in pages.get_children():
+			if child.get_meta("section_id") == section.id: scroll = child
+		var frames := 0
+		for child in scroll.find_children("*", "", true, false):
+			if child.has_meta("dialogue_preview"): frames += 1
+		check(frames == int(section.preview), "authored preview only appears in relevant sections: " + section.id)
+	var category: Button = categories.get_child(0)
+	category.name = "CustomCategory"
+	category.text = "定制文字"
+	var row: HBoxContainer = authored_rows.font_size
+	row.name = "CustomSize"
+	row.get_node("Label").text = "定制字号"
+	row.get_node("Value").name = "CustomSlider"
+	row.add_theme_constant_override("separation", 27)
+	pages.move_child(pages.get_node("Display"), 0)
+	var custom := PackedScene.new()
+	check(custom.pack(view) == OK, "independent settings customization serializes")
+	view.free()
+	# Override the route's scene only. Cherry still configures, mounts and
+	# navigates this customized page through the production code path.
+	var catalog := presenter.menu.page_catalog.duplicate()
+	var definitions: Dictionary = catalog.get_meta("pages").duplicate()
+	var definition := (definitions.settings as PageDefinition).duplicate() as PageDefinition
+	definition.scene = custom
+	definitions.settings = definition
+	catalog.set_meta("pages", definitions)
+	presenter.menu.page_catalog = catalog

@@ -18,8 +18,8 @@
 切换场景、保存或重新打开场景都不会用示例内容覆盖你的修改。
 
 请在 `dialogue_box.tscn`、`choice_button.tscn`、`slot_card.tscn` 等模板中直接编辑节点。
-动态内容区在编辑器中可能为空，这是正常的；运行时才根据剧情、存档和设置 schema 创建实例
-并填充内容。设置中的对话框预览仍是游戏功能，在运行时显示实际对话框效果。
+剧情、存档等动态内容区在编辑器中可能为空，这是正常的；运行时才根据实际数据创建实例
+并填充内容。设置页的固定控件则全部保存在场景中。设置中的对话框预览仍是游戏功能，在运行时显示实际对话框效果。
 检查完整页面效果请运行 `examples/galgame_demo.tscn`（F6）。
 
 ### 接入与场景结构
@@ -48,7 +48,7 @@
 | `scenes/galgame/dialogue_box.tscn` | 正文边距、姓名牌、语音标记、面板圆角、毛玻璃层；对白和旁白共用 |
 | `scenes/galgame/choice_button.tscn` | 单个选项的最小高度、字号、内边距、圆角；可替换 Presenter 的 `choice_scene` |
 | `scenes/galgame/menu_page.tscn` | 菜单页公用边距、标题、返回按钮、分割线和内容区 |
-| `scenes/galgame/settings.tscn` | 分类侧栏、重置按钮、原生 TabContainer |
+| `scenes/galgame/settings.tscn` | 独立设置页的完整布局、分类侧栏、五个子页与全部设置控件 |
 | `scenes/galgame/slots.tscn` / `slot_card.tscn` | 存读档网格、分页区、自动存档按钮，以及栏位内的缩略图和文字布局 |
 | `scenes/galgame/confirm.tscn` / `menus.tscn` | 确认框、导航容器、转场遮挡和提示条 |
 | `scenes/galgame/dialogue_preview.tscn` | 设置子页的预览裁切区域、背景和立绘容器 |
@@ -61,8 +61,26 @@
 
 脚本继续负责主题配色、玩家字体/毛玻璃设置、剧情状态和信号连接。底栏按钮通过
 `metadata/action` 绑定语义动作，改节点名字或顺序不会改变其功能。选项、存档栏位按模板场景实例化；
-设置字段按 JSON schema 生成，回顾记录与流程图按实际数据生成。设置预览复制当前对话框组件，
+设置控件直接绑定 JSON schema，回顾记录与流程图按实际数据生成。设置预览复制当前对话框组件，
 包括继承场景中的姓名牌位置和正文边距，同时拥有独立的材质与文本状态。
+
+### 编辑设置页
+
+`settings.tscn` 是独立场景，不继承 `menu_page.tscn`。标题、返回按钮、分割线、
+`Split/Sidebar` 和 `Split/Pages` 及其完整子节点均可直接编辑。它仍通过 `StoryMenuPage`
+脚本接入 Cherry 导航。编辑子页时，在 `Pages` 的 Inspector 切换 `current_tab` 即可。
+
+分类按钮和对应的滚动子页通过 `metadata/section_id` 配对；字段行通过
+`metadata/setting_key` 对应 `galgame_settings.json` 的字段；行内输入控件标记
+`metadata/setting_control`，数字标签标记 `metadata/setting_number`。
+这些标记允许修改节点名称、文案、间距和子页顺序，而不改变设置功能。
+试听、重播和重新开始按钮用 `metadata/action` 绑定操作。
+
+场景决定布局与固定文案；JSON 决定运行时默认值、选项、范围、条件显示和重置行为。
+场景内控件的初始值只用于编辑时查看，启动后会绑定玩家保存的值。
+新增设置项时，同时添加 schema 字段和带对应标记的场景控件；脚本不会补建缺失的节点。
+三个相关子页已放置 `dialogue_preview.tscn` 实例；游戏运行时才向其中填入当前对白，
+不在编辑器生成预览。
 
 ## 界面与操作
 
@@ -142,7 +160,8 @@ Galgame UI 依赖 Cherry Navigation 的 GDScript 运行时。`scenes/galgame/` �
 Esc / 返回调用 `maybe_pop()`，读档和重新开始使用 `pop_until()` 关闭整个菜单流程。
 剧情在退出动画结束后恢复，转场期间屏蔽连续输入。减少动效使用零时长的原生转场。
 
-设置使用隐藏原生标签栏的 `TabContainer` 与侧边按钮组，子页首次访问时创建并保留。
+设置使用隐藏原生标签栏的 `TabContainer` 与侧边按钮组，五个子页及其控件均由场景保存。
+只有实际对白预览在首次访问时填入，随后保留。
 切换分类保留控件、滚动位置及预览；重置只同步控件值。存读档页复用栏位卡片，
 翻页及保存只绑定新数据，不重建菜单场景。流程图和回顾在被确认框覆盖后也保持原有状态。
 

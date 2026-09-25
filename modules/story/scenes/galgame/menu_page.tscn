@@ -4,7 +4,6 @@
 [ext_resource type="Script" path="../../gdscript/story_menu_page.gd" id="script"]
 [ext_resource type="Resource" path="../../resources/galgame_page_transition.tres" id="transition"]
 [ext_resource type="PackedScene" path="slot_card.tscn" id="slot_card"]
-[ext_resource type="PackedScene" path="dialogue_preview.tscn" id="preview"]
 
 [ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
 
@@ -20,7 +19,6 @@ script = ExtResource("script")
 presentation = 1
 transition = ExtResource("transition")
 slot_card_scene = ExtResource("slot_card")
-preview_scene = ExtResource("preview")
 
 [node name="Sheet" type="PanelContainer" parent="."]
 theme_type_variation = "StorySheet"

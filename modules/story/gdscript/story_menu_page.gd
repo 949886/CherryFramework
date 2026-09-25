@@ -4,7 +4,6 @@ extends NavigationPage
 ## covered; local tabs and slot cards keep their nodes throughout that lifetime.
 
 @export var slot_card_scene: PackedScene
-@export var preview_scene: PackedScene
 ## The shared shell has no page-specific controls. Derived scenes explicitly
 ## choose their content type, so opening a base scene never assumes settings.
 @export var page := "shell"
@@ -22,7 +21,8 @@ var rows: Dictionary = {}
 var fields: Dictionary = {}
 var settings_tabs: TabContainer
 var _tab_buttons: Dictionary = {}
-var _built_sections: Dictionary = {}
+var _section_pages: Dictionary = {}
+var _preview_frames: Dictionary = {}
 var _controls: Dictionary = {}
 var _numbers: Dictionary = {}
 var _previews: Dictionary = {}
@@ -100,65 +100,66 @@ func update_skin() -> void:
 		elif control is ColorPickerButton: control.color = Color(value)
 
 func _settings() -> void:
-	var tabs: VBoxContainer = body.get_node("Split/Sidebar/Categories")
+	# The scene owns all fixed controls. Metadata binds their meaning, so names,
+	# text, row layout and tab ordering remain editable without changing code.
+	var categories: VBoxContainer = body.get_node("Split/Sidebar/Categories")
 	settings_tabs = body.get_node("Split/Pages")
 	var reset: Button = body.get_node("Split/Sidebar/Reset")
-	reset.icon = skin.icon("restart")
 	reset.pressed.connect(func():
 		confirm("恢复默认设置？", "只重置当前分类，其他设置会保留。", func(): presenter.preferences.reset_section(section_id)))
-	var group := ButtonGroup.new()
+	var definitions: Dictionary = {}
 	for section in presenter.preferences.schema.sections:
-		var button := skin.button(section.title, func(): select_section(section.id), Vector2(180, 52), section.get("icon", ""))
-		button.toggle_mode = true
-		button.button_group = group
-		tabs.add_child(button)
-		_tab_buttons[section.id] = button
-		var scroll := ScrollContainer.new()
-		scroll.name = section.id
-		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		settings_tabs.add_child(scroll)
+		for field in section.get("fields", []): definitions[field.key] = field
+	for button in categories.get_children():
+		if not button is Button or not button.has_meta("section_id"): continue
+		var identity := String(button.get_meta("section_id"))
+		_tab_buttons[identity] = button
+		button.pressed.connect(select_section.bind(identity))
+	for scroll in settings_tabs.get_children():
+		if not scroll is ScrollContainer or not scroll.has_meta("section_id"): continue
+		var identity := String(scroll.get_meta("section_id"))
+		_section_pages[identity] = scroll
+		for node in scroll.find_children("*", "", true, false):
+			if node.has_meta("setting_key"):
+				var key := String(node.get_meta("setting_key"))
+				assert(definitions.has(key), "Unknown settings field: " + key)
+				_bind_setting(node, definitions[key])
+			elif node.has_meta("dialogue_preview"):
+				_preview_frames[identity] = node
+	var actions := {
+		"replay_preview": func(): _preview_clock = 0.0,
+		"replay_voice": _replay_current_voice,
+		"replay_effect": _replay_effect,
+		"restart_story": _restart_story,
+	}
+	for button in settings_tabs.find_children("*", "Button", true, false):
+		if button.has_meta("action"):
+			button.pressed.connect(actions[String(button.get_meta("action"))])
 	select_section(menus.section_id)
 
 func select_section(identity: String) -> void:
-	if not _tab_buttons.has(identity): return
+	if not _tab_buttons.has(identity) or not _section_pages.has(identity): return
 	section_id = identity
 	menus.section_id = identity
-	for index in presenter.preferences.schema.sections.size():
-		var section: Dictionary = presenter.preferences.schema.sections[index]
-		_tab_buttons[section.id].set_pressed_no_signal(section.id == identity)
-		if section.id != identity: continue
-		settings_tabs.current_tab = index
-		if not _built_sections.has(identity):
-			_built_sections[identity] = true
-			_build_section(settings_tabs.get_child(index), section)
+	for key in _tab_buttons:
+		_tab_buttons[key].set_pressed_no_signal(key == identity)
+	# Read the scene's actual order, independent of JSON or category ordering.
+	settings_tabs.current_tab = _section_pages[identity].get_index()
+	if _preview_frames.has(identity) and not _previews.has(identity):
+		_add_preview(_preview_frames[identity], identity)
 	preview = _previews.get(identity)
 	if is_inside_tree() and route.state == NavigationRoute.State.ACTIVE:
 		_tab_buttons[identity].grab_focus()
 
-func _build_section(scroll: ScrollContainer, section: Dictionary) -> void:
-	var content := VBoxContainer.new()
-	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	content.add_theme_constant_override("separation", 12)
-	scroll.add_child(content)
-	content.add_child(skin.label(section.title, 22))
-	if section.get("preview", false): _add_preview(content)
-	for field in section.get("fields", []): _setting_row(content, field)
-	if section_id == "sound":
-		content.add_child(skin.label("试听", 20))
-		var samples := HBoxContainer.new()
-		content.add_child(samples)
-		samples.add_child(skin.button("角色语音", _replay_current_voice, Vector2.ZERO, "voice"))
-		samples.add_child(skin.button("界面音效", func():
-			if presenter.effect_stream != null: presenter.effect_player.play()
-			else: notify_user("当前故事未配置界面音效。"), Vector2.ZERO, "volume"))
-	if section_id == "system":
-		content.add_child(skin.label("快捷键", 20))
-		content.add_child(skin.label("空格 / Enter / 左键：推进    Esc：返回\nA：自动    Ctrl：切换快进    H：隐藏\nS：存档    L：读档    B：回顾    M：流程图", 16, "muted"))
-		content.add_child(skin.button("重新开始故事", func():
-			confirm("重新开始？", "当前未保存的进度将丢失，存档与已读记录会保留。", func():
-				presenter.archive.history.clear()
-				presenter.archive.player.restart()
-				presenter.close_menu()), Vector2.ZERO, "restart"))
+func _replay_effect() -> void:
+	if presenter.effect_stream != null: presenter.effect_player.play()
+	else: notify_user("当前故事未配置界面音效。")
+
+func _restart_story() -> void:
+	confirm("重新开始？", "当前未保存的进度将丢失，存档与已读记录会保留。", func():
+		presenter.archive.history.clear()
+		presenter.archive.player.restart()
+		presenter.close_menu())
 
 func confirm(caption: String, message: String, action: Callable) -> void:
 	menus.confirm(caption, message, action)
@@ -166,9 +167,9 @@ func confirm(caption: String, message: String, action: Callable) -> void:
 func notify_user(message: String) -> void:
 	menus.notify_user(message)
 
-func _add_preview(content: VBoxContainer) -> void:
-	var frame := preview_scene.instantiate() as Control
-	content.add_child(frame)
+func _add_preview(frame: Control, identity: String) -> void:
+	# Only live story content is instantiated. The preview frame, settings rows
+	# and actions already exist in the scene before this page enters the tree.
 	var world: Control = frame.get_node("World")
 	world.size = presenter.stage_size
 	var bg: TextureRect = world.get_node("Background")
@@ -200,12 +201,10 @@ func _add_preview(content: VBoxContainer) -> void:
 		world.position.y = -(source.position.y - 100) * factor
 		frame.custom_minimum_size.y = (source.size.y + 140) * factor
 	frame.resized.connect(fit)
-	_preview_fits[section_id] = fit
-	_previews[section_id] = preview
+	_preview_fits[identity] = fit
+	_previews[identity] = preview
 	fit.call_deferred()
 	_preview_clock = 0.0
-	if section_id == "reading":
-		content.add_child(skin.button("重播文字预览", func(): _preview_clock = 0.0, Vector2.ZERO, "restart"))
 
 func _process(delta: float) -> void:
 	if is_visible_in_tree() and page == "settings" and is_instance_valid(preview):
@@ -216,65 +215,40 @@ func _process(delta: float) -> void:
 			preview.text.visible_characters = int(_preview_clock * float(presenter.preferences.values.speed))
 		else: preview.text.visible_characters = -1
 
-func _setting_row(parent: VBoxContainer, field: Dictionary) -> void:
-	var row := HBoxContainer.new()
-	row.custom_minimum_size.y = 46
-	row.add_theme_constant_override("separation", 18)
-	parent.add_child(row)
+func _bind_setting(row: Control, field: Dictionary) -> void:
 	rows[field.key] = row
 	fields[field.key] = field
-	row.visible = presenter.preferences.field_visible(field)
-	var label := skin.label(field.label, 16)
-	label.custom_minimum_size.x = 215
-	row.add_child(label)
-	var value: Variant = presenter.preferences.values[field.key]
+	var control: Control
+	for node in row.find_children("*", "Control", true, false):
+		if node.has_meta("setting_control"): control = node
+		if node.has_meta("setting_number"): _numbers[field.key] = node
+	assert(control != null, "Settings row needs a setting_control: " + String(field.key))
+	_controls[field.key] = control
+	# Defaults, constraints, choices and visibility come from the preference
+	# schema. Scene values are design-time samples; saved player values win at
+	# runtime. Do not replace the scene's labels, layout or control instances.
 	match String(field.type):
 		"check":
-			var toggle := CheckButton.new()
-			toggle.button_pressed = value
-			toggle.text = "开启" if value else "关闭"
-			toggle.toggled.connect(func(enabled):
-				toggle.text = "开启" if enabled else "关闭"
-				presenter.preferences.set_value(field.key, enabled))
-			row.add_child(toggle)
-			_controls[field.key] = toggle
+			var toggle := control as CheckButton
+			toggle.toggled.connect(func(enabled): presenter.preferences.set_value(field.key, enabled))
 		"range":
-			var slider := HSlider.new()
+			var slider := control as HSlider
 			slider.min_value = field.min
 			slider.max_value = field.max
 			slider.step = field.step
-			slider.value = value
-			slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			row.add_child(slider)
-			_controls[field.key] = slider
-			var number := skin.label(str(value) + " " + field.get("unit", ""), 14, "muted")
-			number.custom_minimum_size.x = 92
-			row.add_child(number)
-			_numbers[field.key] = number
-			slider.value_changed.connect(func(next):
-				number.text = str(next) + " " + field.get("unit", "")
-				presenter.preferences.set_value(field.key, next))
+			slider.value_changed.connect(func(next): presenter.preferences.set_value(field.key, next))
 		"select", "palette":
-			var select := OptionButton.new()
-			select.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var select := control as OptionButton
+			select.clear()
 			var options: Dictionary = field.get("options", presenter.preferences.schema.palettes)
 			for id in options:
-				var title: String = options[id].label if options[id] is Dictionary else options[id]
-				select.add_item(title)
+				var caption: String = options[id].label if options[id] is Dictionary else options[id]
+				select.add_item(caption)
 				select.set_item_metadata(select.item_count - 1, id)
-				if id == value: select.select(select.item_count - 1)
 			select.item_selected.connect(func(index): presenter.preferences.set_value(field.key, select.get_item_metadata(index)))
-			row.add_child(select)
-			_controls[field.key] = select
 		"color":
-			var picker := ColorPickerButton.new()
-			picker.color = Color(value)
-			picker.edit_alpha = false
-			picker.custom_minimum_size = Vector2(180, 32)
+			var picker := control as ColorPickerButton
 			picker.color_changed.connect(func(color): presenter.preferences.set_value(field.key, "#" + color.to_html(false)))
-			row.add_child(picker)
-			_controls[field.key] = picker
 
 func _slots() -> void:
 	var grid: GridContainer = body.get_node("Layout/Grid")
