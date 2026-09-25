@@ -29,8 +29,13 @@ var _queued := false
 var _built := false
 var _enabled := false
 var _signals: Array[Dictionary] = []
+var _activation := 0
 
-func _ready() -> void:
+func _enter_tree() -> void:
+	# The editor detaches inactive scene tabs and later reattaches the same
+	# nodes. _ready only runs once, so rebuild on every tree entry instead.
+	# Defer the work until the parent's children and @onready fields are ready.
+	_enabled = false
 	if not Engine.is_editor_hint():
 		set_process(false)
 		return
@@ -43,6 +48,7 @@ func _ready() -> void:
 			return
 		ancestor = ancestor.get_parent()
 	_enabled = true
+	set_process(true)
 	_queue_refresh()
 
 func _notification(what: int) -> void:
@@ -80,7 +86,13 @@ func _current_signature() -> int:
 func _queue_refresh() -> void:
 	if not _enabled or _queued or not is_inside_tree() or _saving: return
 	_queued = true
-	_refresh.call_deferred()
+	_refresh_activation.call_deferred(_activation)
+
+func _refresh_activation(activation: int) -> void:
+	# A quick tab switch can leave an older deferred call in the message queue.
+	# It must not consume or rebuild the preview belonging to a later entry.
+	if activation != _activation: return
+	_refresh()
 
 func _remember(node: Object, property: String, value: Variant) -> void:
 	_saved.append({"node": node, "property": property, "before": node.get(property), "after": value})
@@ -147,11 +159,16 @@ func _restore() -> void:
 	_context_nodes.clear()
 
 func _exit_tree() -> void:
-	if Engine.is_editor_hint(): _restore()
+	if not Engine.is_editor_hint(): return
+	_activation += 1
+	_queued = false
+	_enabled = false
+	_saving = false
+	_restore()
 
 func _refresh() -> void:
 	_queued = false
-	if not is_inside_tree() or _saving: return
+	if not _enabled or not is_inside_tree() or _saving: return
 	_restore()
 	var host: Variant = get_parent()
 	if not host is Control: return

@@ -74,6 +74,17 @@ func run(host: EditorPlugin) -> Dictionary:
 		view.propagate_notification(Node.NOTIFICATION_EDITOR_POST_SAVE)
 		for i in range(8): await host.get_tree().process_frame
 		check(preview._built and _count(view) == nodes_before, "preview restores once after save: " + file)
+		var text_before := _texts(view)
+		# Scene tabs retain the same instance off-tree. _ready is not called on
+		# returning to the tab, unlike loading a new copy of the PackedScene.
+		for cycle in range(3):
+			container.remove_child(view)
+			for i in range(2): await host.get_tree().process_frame
+			check(not preview._built and preview._generated.is_empty(), "inactive scene releases its preview: " + file)
+			container.add_child(view)
+			for i in range(8): await host.get_tree().process_frame
+			check(preview._built and _count(view) == nodes_before and _texts(view) == text_before,
+				"returning to scene restores content exactly once: %s (%d)" % [file, cycle])
 		viewport.queue_free()
 		for i in range(4): await host.get_tree().process_frame
 	var demo: Control = load(module_root.path_join("examples/galgame_demo.tscn")).instantiate()
@@ -94,6 +105,7 @@ func run(host: EditorPlugin) -> Dictionary:
 	for i in range(4): await host.get_tree().process_frame
 	check(AudioServer.bus_count == bus_count, "preview never changes game audio buses")
 	check(not FileAccess.file_exists("user://cherry_galgame/settings.cfg"), "preview never writes player settings")
+	await _check_editor_tabs(host, module_root)
 	print("Galgame editor preview: %d passed, %d failed" % [checks - failures, failures])
 	return {"checks": checks, "failures": failures}
 
@@ -101,3 +113,30 @@ func _count(node: Node) -> int:
 	var count := 1
 	for child in node.get_children(): count += _count(child)
 	return count
+
+func _texts(node: Node) -> Array[String]:
+	var result: Array[String] = []
+	if node is Label or node is RichTextLabel or node is Button:
+		result.append(node.text)
+	for child in node.get_children(): result.append_array(_texts(child))
+	result.sort()
+	return result
+
+func _check_editor_tabs(host: EditorPlugin, module_root: String) -> void:
+	# Also switch actual editor tabs, so the test covers the editor's retained
+	# scene instances instead of only approximating their tree lifecycle.
+	var snapshots := {}
+	for page in ["settings", "save", "backlog", "settings", "flow", "save", "backlog", "settings"]:
+		var path := module_root.path_join("scenes/galgame/%s.tscn" % page)
+		EditorInterface.open_scene_from_path(path)
+		for i in range(12): await host.get_tree().process_frame
+		var root := EditorInterface.get_edited_scene_root()
+		check(root != null and root.scene_file_path == path, "editor activates scene tab: " + page)
+		if root == null or root.scene_file_path != path: continue
+		var preview := root.get_node("EditorPreview")
+		check(preview._built, "active editor tab has preview content: " + page)
+		if snapshots.has(page):
+			check(root == snapshots[page].root and _texts(root) == snapshots[page].text and _count(root) == snapshots[page].count,
+				"editor tab keeps instance and restores all content: " + page)
+		else:
+			snapshots[page] = {"root": root, "text": _texts(root), "count": _count(root)}

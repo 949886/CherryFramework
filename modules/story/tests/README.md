@@ -30,7 +30,7 @@ python addons/cherry/modules/story/tests/run_tests.py --godot "C:/path/to/godot_
 | `presentation_test.gd` | 句中文字/等待/输入/淡入恢复、暂停、快进、自动播放、语音和立绘、60/120 Hz 一致性 |
 | `extension_test.gd` | 自定义命令、参数验证、注册冲突、替换表现层、扩展状态保存 |
 | `galgame_scene_test.gd` | 独立 Presenter 场景接入、布局覆盖序列化、自定义选项模板、窗口适配、预览布局一致与材质隔离 |
-| `galgame_editor_suite.gd` | 真实编辑器中的 Galgame 页面与基础模板、共享主题与示例内容、保存清理/重建、样式编辑保留、无玩家设置和音频副作用 |
+| `galgame_editor_suite.gd` | 真实编辑器中的 Galgame 页面与基础模板、共享主题与示例内容、保存清理/重建、场景离树重入和实际编辑器标签页切换、样式编辑保留、无玩家设置和音频副作用 |
 | `galgame_resource_load_test.gd` | 独立引擎进程分别首次加载预览脚本、菜单类、路由资源与各个场景，防止资源缓存掩盖循环加载；叶组件不会反向加载整套路由 |
 | `cache_test.gd` | 缓存命中、独立运行时、初始化次数、源码/剧情 ID/编译器版本失效、容量淘汰、错误恢复 |
 | `validator_test.gd` | 跳转闭环、混合格式及语言、SID 漂移、命令/素材/显式依赖诊断、验证时不执行作者代码 |
