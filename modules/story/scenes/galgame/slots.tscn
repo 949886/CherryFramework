@@ -1,6 +1,8 @@
 [gd_scene format=3]
 [ext_resource type="PackedScene" path="menu_page.tscn" id="base"]
 [node name="Slots" instance=ExtResource("base")]
+page = "slots"
+title = "存档栏位"
 
 [node name="Layout" type="VBoxContainer" parent="Sheet/Margin/Layout/Body"]
 layout_mode = 1

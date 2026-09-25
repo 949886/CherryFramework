@@ -14,7 +14,9 @@ func check(value: bool, message: String) -> void:
 func run(host: EditorPlugin) -> Dictionary:
 	var module_root: String = host.module.module_root
 	var bus_count := AudioServer.bus_count
-	for file in ["galgame/dialogue_box", "galgame/choice_button", "galgame/slot_card", "galgame/settings", "galgame/save", "galgame/load", "galgame/confirm", "galgame/backlog", "galgame/flow", "galgame_presenter"]:
+	# Base scenes are opened directly while authoring too. In particular the
+	# shell and slot template must not run the settings-only control builder.
+	for file in ["galgame/dialogue_box", "galgame/choice_button", "galgame/slot_card", "galgame/menu_page", "galgame/slots", "galgame/settings", "galgame/save", "galgame/load", "galgame/confirm", "galgame/backlog", "galgame/flow", "galgame/ending", "galgame_presenter"]:
 		var resource := load(module_root.path_join("scenes/" + file + ".tscn")) as PackedScene
 		var view: Variant = resource.instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE)
 		var viewport := SubViewport.new()
@@ -34,13 +36,17 @@ func run(host: EditorPlugin) -> Dictionary:
 			viewport.get_texture().get_image().save_png("user://editor-" + file.get_file() + ".png")
 		if view is StoryMenuPage:
 			check(view.heading.text == view.title and view.size == Vector2(1280, 720), "page title and virtual canvas: " + file)
+			if file == "galgame/menu_page":
+				check(view.page == "shell" and view.body.get_child_count() == 0, "base menu previews only its authored shell")
+			if file == "galgame/slots":
+				check(view.page == "slots" and view.fields.is_empty(), "base slots previews cards without settings controls")
 			if view.page == "settings":
 				check(view.fields.size() > 0 and view.preview != null, "settings shows real fields and dialogue preview")
 				preview.settings_section = "sound"
 				preview._refresh()
 				for i in range(6): await host.get_tree().process_frame
 				check(view.preview == null and view.fields.has("master"), "Inspector switches preview to sound category")
-			elif view.page in ["save", "load"]:
+			elif view.page in ["slots", "save", "load"]:
 				check(view._slot_cards.size() == 6, "six actual slot templates in editor")
 				check(view._slot_cards[0].stamp.text.contains("编辑预览"), "slot preview uses sample data")
 		elif view is StoryGalgamePresenter:

@@ -43,6 +43,10 @@
 标题和底栏；`Stage/Menus` 包含 Cherry Navigator、转场输入遮挡和提示条，`Audio` 包含四个播放器。
 这些节点在运行前已经存在。启动后 `GameView` 整体挂入 Cherry 的常驻根路由，节点及其引用保持不变。
 
+菜单路由资源由 `menus.tscn` 的 `page_catalog` 属性配置，默认使用 `galgame_pages.tres`。
+可在 Inspector 中替换该资源。菜单脚本不预加载页面场景，避免页面的编辑器预览反向引用
+菜单类时形成资源加载循环；单独打开组件也不需要先打开 Presenter。
+
 | 场景 | 可直接编辑的内容 |
 | --- | --- |
 | `scenes/galgame_presenter.tscn` | 设计画布、背景和立绘区域、对话框锚点、选项宽度、底栏按钮布局 |

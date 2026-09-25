@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="../../../ui/navigation/gdscript/navigator.gd" id="navigator"]
 
 [ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
+[ext_resource type="Resource" path="../../resources/galgame_pages.tres" id="page_catalog"]
 
 [node name="Menus" type="Control" node_paths=PackedStringArray("navigator", "toast", "_input_blocker")]
 theme = ExtResource("editor_theme")
@@ -14,6 +15,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("script")
+page_catalog = ExtResource("page_catalog")
 navigator = NodePath("StoryNavigator")
 toast = NodePath("Toast")
 _input_blocker = NodePath("InputBlocker")

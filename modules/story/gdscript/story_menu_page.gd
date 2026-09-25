@@ -6,8 +6,10 @@ extends NavigationPage
 
 @export var slot_card_scene: PackedScene
 @export var preview_scene: PackedScene
-@export var page := "settings"
-@export var title := "设置"
+## The shared shell has no page-specific controls. Derived scenes explicitly
+## choose their content type, so opening a base scene never assumes settings.
+@export var page := "shell"
+@export var title := "菜单"
 var menus: StoryGalgameMenus
 var presenter: StoryGalgamePresenter
 var skin: StorySkin
@@ -50,7 +52,7 @@ func build_content() -> void:
 	body = $Sheet/Margin/Layout/Body
 	match page:
 		"settings": _settings()
-		"save", "load": _slots()
+		"slots", "save", "load": _slots()
 		"backlog": _backlog()
 		"flow":
 			var graph := StoryFlowView.new()

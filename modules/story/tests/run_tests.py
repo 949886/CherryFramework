@@ -152,6 +152,19 @@ renderer/rendering_method="gl_compatibility"
     if not run('import', ['--editor', '--import']):
         return 1
     for test in tests:
+        if test == 'galgame_resource_load_test.gd':
+            # Separate engine processes are essential: a preceding presenter
+            # load can make a circular script/scene dependency appear valid.
+            entries = ['editor/story_scene_preview.gd', 'gdscript/story_galgame_menus.gd',
+                       'resources/galgame_pages.tres', 'scenes/galgame_presenter.tscn',
+                       'examples/galgame_demo.tscn']
+            entries += [f'scenes/galgame/{path.name}'
+                        for path in sorted((module / 'scenes/galgame').glob('*.tscn'))]
+            for index, entry in enumerate(entries):
+                run(f'galgame_cold_load_{index:02d}',
+                    ['--script', f'res://{module_path}/tests/{test}', '--', f'--resource={entry}'],
+                    marker='passed, 0 failed')
+            continue
         run(test.removesuffix('.gd'), ['--script', f'res://{module_path}/tests/{test}'], marker='passed, 0 failed')
 
     if not args.runtime_only:

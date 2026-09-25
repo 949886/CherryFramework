@@ -4,7 +4,10 @@ extends Control
 ## Cherry owns route lifetime, covered input/focus, modal scrims and transitions.
 ## Local tab/slot state belongs to the mounted StoryMenuPage, never this router.
 
-const PAGES = preload("../resources/galgame_pages.tres")
+## Supplied by menus.tscn, keeping the dependency direction scene -> script.
+## A script preload here creates a cycle through page scenes -> EditorPreview
+## -> this class, and fails when the editor loads a component before the shell.
+@export var page_catalog: Resource
 var presenter: StoryGalgamePresenter
 var skin: StorySkin
 @export var navigator: Navigator
@@ -43,7 +46,7 @@ func configure(owner_presenter: StoryGalgamePresenter) -> void:
 	update_skin("")
 
 func _definition(identity: String) -> PageDefinition:
-	return PAGES.get_meta("pages").get(identity) as PageDefinition
+	return page_catalog.get_meta("pages").get(identity) as PageDefinition
 
 func open(target: String) -> void:
 	if Engine.is_editor_hint(): return
