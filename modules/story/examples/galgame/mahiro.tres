@@ -1,15 +1,19 @@
-[gd_resource type="Resource" script_class="StoryCharacter" format=3]
-[ext_resource type="Script" path="../../gdscript/story_character.gd" id="1"]
-[ext_resource type="Script" path="../../gdscript/story_character_state.gd" id="2"]
-[ext_resource type="Texture2D" path="assets/mahiro_default.webp" id="3"]
-[ext_resource type="Texture2D" path="assets/mahiro_happy.webp" id="4"]
+[gd_resource type="Resource" script_class="StoryCharacter" format=3 uid="uid://bjdnc1uya2gym"]
+
+[ext_resource type="Script" uid="uid://bv8imtsh2qrba" path="res://addons/cherry/modules/story/gdscript/story_character.gd" id="1"]
+[ext_resource type="Script" uid="uid://dlxmrl0i15y7i" path="res://addons/cherry/modules/story/gdscript/story_character_state.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://dtknxdps7tfol" path="res://addons/cherry/modules/story/examples/galgame/assets/mahiro_default.webp" id="3"]
+[ext_resource type="Texture2D" uid="uid://dg6ehhm6lxgpx" path="res://addons/cherry/modules/story/examples/galgame/assets/mahiro_happy.webp" id="4"]
+
 [sub_resource type="Resource" id="Normal"]
 script = ExtResource("2")
 portrait = ExtResource("3")
+
 [sub_resource type="Resource" id="Happy"]
 script = ExtResource("2")
 id = &"happy"
 portrait = ExtResource("4")
+
 [resource]
 script = ExtResource("1")
 id = &"mahiro"

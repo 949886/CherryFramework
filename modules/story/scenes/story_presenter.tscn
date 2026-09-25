@@ -1,7 +1,7 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://r1k8euwv6sh8"]
 
-[ext_resource type="Script" path="../gdscript/story_presenter.gd" id="2_presenter"]
-[ext_resource type="Theme" path="story_theme.tres" id="3_theme"]
+[ext_resource type="Script" uid="uid://dsqsh4hfwgcd8" path="res://addons/cherry/modules/story/gdscript/story_presenter.gd" id="2_presenter"]
+[ext_resource type="Theme" uid="uid://bv63a7u18554b" path="res://addons/cherry/modules/story/scenes/story_theme.tres" id="3_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleArticle"]
 bg_color = Color(0.94, 0.92, 0.86, 0.96)
@@ -27,15 +27,15 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[node name="StoryPresenter" type="Control" node_paths=PackedStringArray("background", "portrait", "article_panel", "article_text", "dialogue_panel", "speaker_label", "dialogue_text", "choices_panel", "popup_layer", "popup_texture", "audio_player")]
-layout_mode = 1
+[node name="StoryPresenter" type="Control" unique_id=1383192086 node_paths=PackedStringArray("background", "portrait", "article_panel", "article_text", "dialogue_panel", "speaker_label", "dialogue_text", "choices_panel", "popup_layer", "popup_texture", "audio_player")]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("2_presenter")
 theme = ExtResource("3_theme")
+script = ExtResource("2_presenter")
 background = NodePath("Background")
 portrait = NodePath("CharacterLayer/Portrait")
 article_panel = NodePath("ArticlePanel")
@@ -48,7 +48,7 @@ popup_layer = NodePath("PopupLayer")
 popup_texture = NodePath("PopupLayer/Center/PopupTexture")
 audio_player = NodePath("AudioPlayer")
 
-[node name="Background" type="TextureRect" parent="."]
+[node name="Background" type="TextureRect" parent="." unique_id=2087249058]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -59,7 +59,7 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CharacterLayer" type="Control" parent="."]
+[node name="CharacterLayer" type="Control" parent="." unique_id=91576705]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -68,7 +68,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Portrait" type="TextureRect" parent="CharacterLayer"]
+[node name="Portrait" type="TextureRect" parent="CharacterLayer" unique_id=1647299836]
 visible = false
 layout_mode = 1
 anchors_preset = -1
@@ -83,7 +83,7 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ArticlePanel" type="PanelContainer" parent="."]
+[node name="ArticlePanel" type="PanelContainer" parent="." unique_id=1908202873]
 visible = false
 layout_mode = 1
 anchors_preset = -1
@@ -95,14 +95,14 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleArticle")
 
-[node name="Margin" type="MarginContainer" parent="ArticlePanel"]
+[node name="Margin" type="MarginContainer" parent="ArticlePanel" unique_id=2017752034]
 layout_mode = 2
 theme_override_constants/margin_left = 34
 theme_override_constants/margin_top = 28
 theme_override_constants/margin_right = 34
 theme_override_constants/margin_bottom = 28
 
-[node name="ArticleText" type="RichTextLabel" parent="ArticlePanel/Margin"]
+[node name="ArticleText" type="RichTextLabel" parent="ArticlePanel/Margin" unique_id=543791324]
 layout_mode = 2
 theme_override_colors/default_color = Color(0.15, 0.13, 0.12, 1)
 theme_override_font_sizes/normal_font_size = 28
@@ -112,7 +112,7 @@ theme_override_font_sizes/italics_font_size = 28
 bbcode_enabled = true
 scroll_active = false
 
-[node name="DialoguePanel" type="PanelContainer" parent="."]
+[node name="DialoguePanel" type="PanelContainer" parent="." unique_id=1535450953]
 visible = false
 layout_mode = 1
 anchors_preset = -1
@@ -124,24 +124,23 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleDialogue")
 
-[node name="Margin" type="MarginContainer" parent="DialoguePanel"]
+[node name="Margin" type="MarginContainer" parent="DialoguePanel" unique_id=553069274]
 layout_mode = 2
 theme_override_constants/margin_left = 30
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 30
 theme_override_constants/margin_bottom = 22
 
-[node name="VBox" type="VBoxContainer" parent="DialoguePanel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="DialoguePanel/Margin" unique_id=2054001896]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Speaker" type="Label" parent="DialoguePanel/Margin/VBox"]
+[node name="Speaker" type="Label" parent="DialoguePanel/Margin/VBox" unique_id=1510272020]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.78, 0.94, 1)
 theme_override_font_sizes/font_size = 28
-text = ""
 
-[node name="Text" type="RichTextLabel" parent="DialoguePanel/Margin/VBox"]
+[node name="Text" type="RichTextLabel" parent="DialoguePanel/Margin/VBox" unique_id=101919819]
 custom_minimum_size = Vector2(0, 118)
 layout_mode = 2
 theme_override_colors/default_color = Color(0.97, 0.97, 1, 1)
@@ -152,7 +151,7 @@ theme_override_font_sizes/italics_font_size = 25
 bbcode_enabled = true
 scroll_active = false
 
-[node name="ChoicesPanel" type="VBoxContainer" parent="."]
+[node name="ChoicesPanel" type="VBoxContainer" parent="." unique_id=1769133227]
 visible = false
 layout_mode = 1
 anchors_preset = -1
@@ -164,7 +163,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 12
 
-[node name="PopupLayer" type="ColorRect" parent="."]
+[node name="PopupLayer" type="ColorRect" parent="." unique_id=1441712878]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -175,7 +174,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.015, 0.02, 0.035, 0.78)
 
-[node name="Center" type="CenterContainer" parent="PopupLayer"]
+[node name="Center" type="CenterContainer" parent="PopupLayer" unique_id=1624933539]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -184,11 +183,11 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="PopupTexture" type="TextureRect" parent="PopupLayer/Center"]
+[node name="PopupTexture" type="TextureRect" parent="PopupLayer/Center" unique_id=1757136037]
 custom_minimum_size = Vector2(720, 500)
 layout_mode = 2
 mouse_filter = 2
 expand_mode = 3
 stretch_mode = 5
 
-[node name="AudioPlayer" type="AudioStreamPlayer" parent="."]
+[node name="AudioPlayer" type="AudioStreamPlayer" parent="." unique_id=1448130042]

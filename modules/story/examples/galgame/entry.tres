@@ -1,5 +1,8 @@
-[gd_resource type="Resource" script_class="MarkdownStory" format=3]
-[ext_resource type="Script" path="../../gdscript/markdown_story.gd" id="1"]
+[gd_resource type="Resource" script_class="MarkdownStory" format=3 uid="uid://drxuc5egqg1ft"]
+
+[ext_resource type="Script" uid="uid://cvw6khe1v10hg" path="res://addons/cherry/modules/story/gdscript/markdown_story.gd" id="1"]
+[ext_resource type="Resource" uid="uid://cm5loomec2rl5" path="res://addons/cherry/modules/story/resources/default_commands.tres" id="1_kb10m"]
+
 [resource]
 script = ExtResource("1")
 source_file = "res://addons/cherry/modules/story/examples/galgame/stories/arrival.md"

@@ -1,14 +1,15 @@
-[gd_scene format=3]
-[ext_resource type="Script" path="../gdscript/story_galgame_presenter.gd" id="1"]
-[ext_resource type="Script" path="../gdscript/story_player.gd" id="2"]
-[ext_resource type="Resource" path="galgame/entry.tres" id="3"]
-[ext_resource type="Resource" path="galgame/mahiro.tres" id="4"]
-[ext_resource type="Script" path="../gdscript/story_character.gd" id="5"]
-[ext_resource type="Texture2D" path="galgame/assets/background.webp" id="6"]
-[ext_resource type="Resource" path="../resources/runtime_dependencies.tres" id="7"]
-[ext_resource type="Resource" path="../resources/galgame_dependencies.tres" id="8"]
+[gd_scene format=3 uid="uid://by0kbssw3ohki"]
 
-[node name="CherryStory" type="Control"]
+[ext_resource type="Script" uid="uid://dypiot1qmqgtn" path="res://addons/cherry/modules/story/gdscript/story_galgame_presenter.gd" id="1"]
+[ext_resource type="Script" uid="uid://dx02p6qlqm1dt" path="res://addons/cherry/modules/story/gdscript/story_player.gd" id="2"]
+[ext_resource type="Resource" path="res://addons/cherry/modules/story/examples/galgame/entry.tres" id="3"]
+[ext_resource type="Resource" path="res://addons/cherry/modules/story/examples/galgame/mahiro.tres" id="4"]
+[ext_resource type="Script" uid="uid://bv8imtsh2qrba" path="res://addons/cherry/modules/story/gdscript/story_character.gd" id="5"]
+[ext_resource type="Texture2D" uid="uid://b5fmo1a74vayf" path="res://addons/cherry/modules/story/examples/galgame/assets/background.webp" id="6"]
+[ext_resource type="Resource" uid="uid://5v2dr5f5epj6" path="res://addons/cherry/modules/story/resources/runtime_dependencies.tres" id="7"]
+[ext_resource type="Resource" path="res://addons/cherry/modules/story/resources/galgame_dependencies.tres" id="8"]
+
+[node name="CherryStory" type="Control" unique_id=756096171]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -16,7 +17,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Presenter" type="Control" parent="."]
+[node name="Presenter" type="Control" parent="." unique_id=648102358]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -24,12 +25,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
-characters = Array[ExtResource("5")]([ExtResource("4")])
 catalog_path = "res://addons/cherry/modules/story/examples/galgame/catalog.json"
 backdrop = ExtResource("6")
+characters = Array[ExtResource("5")]([ExtResource("4")])
 metadata/galgame_dependencies = ExtResource("8")
 
-[node name="StoryPlayer" type="Node" parent="." node_paths=PackedStringArray("presenter")]
+[node name="StoryPlayer" type="Node" parent="." unique_id=217476933 node_paths=PackedStringArray("presenter")]
 script = ExtResource("2")
 story = ExtResource("3")
 runtime_dependencies = ExtResource("7")
