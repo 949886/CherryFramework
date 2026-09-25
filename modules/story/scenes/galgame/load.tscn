@@ -6,3 +6,6 @@
 navigation_path = "ui://cherry/story/load"
 page = "load"
 title = "读档"
+
+[node name="Heading" parent="Sheet/Margin/Layout/Header"]
+text = "读档"

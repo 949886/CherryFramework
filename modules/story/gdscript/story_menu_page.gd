@@ -1,4 +1,3 @@
-@tool
 class_name StoryMenuPage
 extends NavigationPage
 ## A mounted native game page. Cherry owns its route lifetime and focus when
@@ -38,7 +37,6 @@ func configure(owner_menus: StoryGalgameMenus) -> void:
 	skin = presenter.skin
 
 func _ready() -> void:
-	if Engine.is_editor_hint(): return
 	build_content()
 
 func build_content() -> void:
@@ -134,7 +132,7 @@ func select_section(identity: String) -> void:
 			_built_sections[identity] = true
 			_build_section(settings_tabs.get_child(index), section)
 	preview = _previews.get(identity)
-	if not Engine.is_editor_hint() and is_inside_tree() and route.state == NavigationRoute.State.ACTIVE:
+	if is_inside_tree() and route.state == NavigationRoute.State.ACTIVE:
 		_tab_buttons[identity].grab_focus()
 
 func _build_section(scroll: ScrollContainer, section: Dictionary) -> void:
@@ -210,7 +208,6 @@ func _add_preview(content: VBoxContainer) -> void:
 		content.add_child(skin.button("重播文字预览", func(): _preview_clock = 0.0, Vector2.ZERO, "restart"))
 
 func _process(delta: float) -> void:
-	if Engine.is_editor_hint(): return
 	if is_visible_in_tree() and page == "settings" and is_instance_valid(preview):
 		preview.size = presenter.dialogue.size
 		preview.position = presenter.dialogue.position
@@ -313,14 +310,6 @@ func select_slot_page(index: int) -> void:
 	refresh_slots()
 
 func refresh_slots() -> void:
-	if Engine.is_editor_hint():
-		for index in _slot_cards.size():
-			var card: Dictionary = _slot_cards[index]
-			card.title.text = "SLOT %02d" % (index + 1)
-			card.text.text = "故事的一页" if index == 0 else "空白的故事页"
-			card.stamp.text = "编辑预览 · 示例记录" if index == 0 else "暂无记录"
-			card.button.disabled = page == "load" and index != 0
-		return
 	# Bind new slot data to the existing six card nodes. Focus, hover and grid
 	# geometry survive pagination; no scene subtree is torn down or faded out.
 	for offset in _slot_cards.size():
@@ -352,7 +341,6 @@ func refresh_slots() -> void:
 			card.stamp.text = "点击保存此刻" if page == "save" else "暂无记录"
 
 func _slot_action(index: int) -> void:
-	if Engine.is_editor_hint(): return
 	if page == "load":
 		_request_load(func(): return presenter.archive.load_slot(index))
 		return
@@ -410,14 +398,12 @@ func _scroll_end(scroll: ScrollContainer) -> void:
 	if is_instance_valid(scroll): scroll.scroll_vertical = int(scroll.get_v_scroll_bar().max_value)
 
 func _play_voice(path: String) -> void:
-	if Engine.is_editor_hint(): return
 	if ResourceLoader.exists(path) and load(path) is AudioStream:
 		presenter.replay_player.stream = load(path)
 		presenter.replay_player.play()
 	else: notify_user("这句对白的语音资源暂不可用。")
 
 func _replay_current_voice() -> void:
-	if Engine.is_editor_hint(): return
 	var stream := presenter.audio_player.stream
 	if stream != null:
 		presenter.replay_player.stream = stream

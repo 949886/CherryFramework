@@ -1,4 +1,3 @@
-@tool
 class_name StoryGalgamePresenter
 extends StoryPresenter
 ## Native galgame shell. The VM owns execution; this class owns presentation,
@@ -52,7 +51,6 @@ var _choice_token := -1
 var _choice_remaining := 0.0
 
 func _ready() -> void:
-	if Engine.is_editor_hint(): return
 	preferences.path = save_directory.path_join("settings.cfg")
 	preferences.load_settings()
 	skin = StorySkin.new(preferences)
@@ -382,11 +380,3 @@ func _pointer_is_over_button() -> bool:
 		if current is BaseButton or current is Range: return true
 		current = current.get_parent()
 	return false
-
-func _process(delta: float) -> void:
-	if Engine.is_editor_hint(): return
-	super._process(delta)
-
-func _exit_tree() -> void:
-	if Engine.is_editor_hint(): return
-	super._exit_tree()

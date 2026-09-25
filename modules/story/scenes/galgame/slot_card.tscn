@@ -1,6 +1,5 @@
 [gd_scene format=3]
 [ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
-[ext_resource type="Script" path="../../editor/story_scene_preview.gd" id="editor_preview"]
 
 [node name="SlotCard" type="Button"]
 theme = ExtResource("editor_theme")
@@ -48,7 +47,3 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 12
 metadata/palette_color = "muted"
-
-[node name="EditorPreview" type="Node" parent="."]
-script = ExtResource("editor_preview")
-kind = "slot"

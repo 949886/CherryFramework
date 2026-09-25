@@ -1,4 +1,3 @@
-@tool
 class_name StoryDialogueBox
 extends PanelContainer
 ## One native component is used on the stage and in settings subpages.
@@ -36,7 +35,7 @@ func _ready() -> void:
 	resized.connect(_update_glass_size)
 
 func apply_skin(skin: StorySkin) -> void:
-	# Copy on change also keeps editor previews from mutating authored resources.
+	# Keep the live settings preview and dialogue instances independently styled.
 	_panel_style = get_theme_stylebox("panel").duplicate() as StyleBoxFlat
 	_name_style = nameplate.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
 	add_theme_stylebox_override("panel", _panel_style)

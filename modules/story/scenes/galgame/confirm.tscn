@@ -1,10 +1,11 @@
 [gd_scene format=3]
+[ext_resource type="Texture2D" path="../../icons/galgame/check.svg" id="icon_check"]
+[ext_resource type="Texture2D" path="../../icons/galgame/close.svg" id="icon_close"]
 
 [ext_resource type="Script" path="../../gdscript/story_confirmation_page.gd" id="script"]
 [ext_resource type="Resource" path="../../resources/galgame_page_transition.tres" id="transition"]
 
 [ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
-[ext_resource type="Script" path="../../editor/story_scene_preview.gd" id="editor_preview"]
 
 [node name="Confirm" type="Control"]
 theme = ExtResource("editor_theme")
@@ -52,17 +53,15 @@ alignment = 2
 theme_override_constants/separation = 12
 
 [node name="Cancel" type="Button" parent="Card/Content/Buttons"]
+icon = ExtResource("icon_close")
 layout_mode = 2
 custom_minimum_size = Vector2(110, 40)
 mouse_default_cursor_shape = 2
 text = "取消"
 
 [node name="Confirm" type="Button" parent="Card/Content/Buttons"]
+icon = ExtResource("icon_check")
 layout_mode = 2
 custom_minimum_size = Vector2(110, 40)
 mouse_default_cursor_shape = 2
 text = "确定"
-
-[node name="EditorPreview" type="Node" parent="."]
-script = ExtResource("editor_preview")
-kind = "confirm"

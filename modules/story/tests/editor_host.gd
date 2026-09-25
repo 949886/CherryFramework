@@ -16,8 +16,6 @@ func _enter_tree() -> void:
 		_probe.call_deferred()
 	elif "--story-icon-check" in OS.get_cmdline_user_args():
 		_icon_probe.call_deferred()
-	elif "--story-editor-render" in OS.get_cmdline_user_args():
-		_preview_probe.call_deferred()
 
 func _has_main_screen() -> bool:
 	return true
@@ -42,10 +40,6 @@ func _probe() -> void:
 
 func _icon_probe() -> void:
 	var result: Dictionary = await IconSuite.new().run(self)
-	get_tree().quit(0 if result.failures == 0 else 1)
-
-func _preview_probe() -> void:
-	var result: Dictionary = await GalgameEditorSuite.new().run(self)
 	get_tree().quit(0 if result.failures == 0 else 1)
 
 func _exit_tree() -> void:

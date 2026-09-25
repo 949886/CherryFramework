@@ -6,3 +6,6 @@
 navigation_path = "ui://cherry/story/ending"
 page = "ending"
 title = "故事的余韵"
+
+[node name="Heading" parent="Sheet/Margin/Layout/Header"]
+text = "故事的余韵"

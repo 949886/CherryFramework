@@ -1,4 +1,5 @@
 [gd_scene format=3]
+[ext_resource type="Texture2D" path="../../icons/galgame/restart.svg" id="icon_restart"]
 
 [ext_resource type="PackedScene" path="menu_page.tscn" id="base"]
 
@@ -33,6 +34,7 @@ size_flags_vertical = 3
 mouse_filter = 2
 
 [node name="Reset" type="Button" parent="Sheet/Margin/Layout/Body/Split/Sidebar"]
+icon = ExtResource("icon_restart")
 layout_mode = 2
 text = "重置本页"
 mouse_default_cursor_shape = 2
@@ -42,3 +44,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 tabs_visible = false
 theme_override_styles/panel = SubResource("empty")
+
+[node name="Heading" parent="Sheet/Margin/Layout/Header"]
+text = "设置"

@@ -1,4 +1,3 @@
-@tool
 class_name StoryFlowView
 extends VBoxContainer
 ## One card per reachable script identity. Layout, edges and progress come from

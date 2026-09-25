@@ -33,7 +33,13 @@ var _generation := 0
 
 func _init() -> void:
 	# Assign after the default value (null), so ResourceSaver persists the link.
-	runtime_dependencies = preload("../resources/runtime_dependencies.tres")
+	# Resolve at instance creation, not while parsing this class: the manifest
+	# includes presenter scripts which can themselves refer to StoryPlayer.
+	# Walk to this base script so external subclasses still use Cherry's files.
+	var base_script := get_script() as Script
+	while base_script.get_base_script() != null:
+		base_script = base_script.get_base_script()
+	runtime_dependencies = load(base_script.resource_path.get_base_dir().path_join("../resources/runtime_dependencies.tres"))
 
 func _ready() -> void:
 	if Engine.is_editor_hint():

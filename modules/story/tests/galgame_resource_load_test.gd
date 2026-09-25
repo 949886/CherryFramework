@@ -6,7 +6,7 @@ extends SceneTree
 
 func _initialize() -> void:
 	var module_root := (get_script() as Script).resource_path.get_base_dir().get_base_dir()
-	var target := "editor/story_scene_preview.gd"
+	var target := "gdscript/story_galgame_menus.gd"
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--resource="): target = argument.trim_prefix("--resource=")
 	var path := module_root.path_join(target)
@@ -23,7 +23,7 @@ func _initialize() -> void:
 		printerr("FAIL: cold resource load: " + target)
 	# Only the composed menus/presenter and the catalog itself should load all
 	# routes. A leaf component or script must not pull its parent scenes in.
-	if target.begins_with("editor/") or target.begins_with("gdscript/") or target in [
+	if target.begins_with("gdscript/") or target in [
 		"scenes/galgame/slot_card.tscn", "scenes/galgame/confirm.tscn", "scenes/galgame/menu_page.tscn"]:
 		checks += 1
 		if ResourceLoader.has_cached(catalog_path):

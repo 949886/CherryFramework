@@ -18,7 +18,6 @@
 
 [ext_resource type="Theme" path="../resources/galgame_theme.tres" id="editor_theme"]
 
-[ext_resource type="Script" path="../editor/story_scene_preview.gd" id="editor_preview"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rfy3m"]
 resource_local_to_scene = true
@@ -409,10 +408,6 @@ metadata/action = "settings"
 [node name="Music" type="AudioStreamPlayer" parent="Audio" unique_id=992433442]
 
 [node name="Effects" type="AudioStreamPlayer" parent="Audio" unique_id=1778560063]
-
-[node name="EditorPreview" type="Node" parent="."]
-script = ExtResource("editor_preview")
-kind = "presenter"
 
 [editable path="Stage/GameView/Dialogue"]
 [editable path="Stage/GameView/Narration"]

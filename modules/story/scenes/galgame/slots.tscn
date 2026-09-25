@@ -1,4 +1,5 @@
 [gd_scene format=3]
+[ext_resource type="Texture2D" path="../../icons/galgame/load.svg" id="icon_load"]
 [ext_resource type="PackedScene" path="menu_page.tscn" id="base"]
 [node name="Slots" instance=ExtResource("base")]
 page = "slots"
@@ -39,6 +40,10 @@ theme_override_font_sizes/font_size = 14
 metadata/palette_color = "muted"
 
 [node name="Automatic" type="Button" parent="Sheet/Margin/Layout/Body/Layout/Navigation"]
+icon = ExtResource("icon_load")
 layout_mode = 2
 text = "读取自动存档"
 mouse_default_cursor_shape = 2
+
+[node name="Heading" parent="Sheet/Margin/Layout/Header"]
+text = "存档栏位"

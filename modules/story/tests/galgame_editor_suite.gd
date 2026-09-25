@@ -1,6 +1,18 @@
 @tool
 extends RefCounted
-## Run in a real editor process, not a runtime imitation of editor_hint.
+## Test-only editor code. Production UI scenes are passive, editable templates:
+## no generated nodes, sample data, save hooks or page builders run in the editor.
+
+const UI_SCRIPTS = [
+	preload("../gdscript/story_galgame_presenter.gd"),
+	preload("../gdscript/story_galgame_menus.gd"),
+	preload("../gdscript/story_menu_page.gd"),
+	preload("../gdscript/story_dialogue_box.gd"),
+	preload("../gdscript/story_choice_button.gd"),
+	preload("../gdscript/story_flow_view.gd"),
+	preload("../gdscript/story_skin.gd"),
+	preload("../gdscript/story_preferences.gd"),
+]
 
 var checks := 0
 var failures := 0
@@ -14,129 +26,89 @@ func check(value: bool, message: String) -> void:
 func run(host: EditorPlugin) -> Dictionary:
 	var module_root: String = host.module.module_root
 	var bus_count := AudioServer.bus_count
-	# Base scenes are opened directly while authoring too. In particular the
-	# shell and slot template must not run the settings-only control builder.
-	for file in ["galgame/dialogue_box", "galgame/choice_button", "galgame/slot_card", "galgame/menu_page", "galgame/slots", "galgame/settings", "galgame/save", "galgame/load", "galgame/confirm", "galgame/backlog", "galgame/flow", "galgame/ending", "galgame_presenter"]:
-		var resource := load(module_root.path_join("scenes/" + file + ".tscn")) as PackedScene
-		var view: Variant = resource.instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE)
-		var viewport := SubViewport.new()
-		viewport.size = Vector2i(1280, 720)
-		viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-		host.add_child(viewport)
+	for script in UI_SCRIPTS:
+		check(not script.is_tool(), "UI logic is runtime-only: " + script.resource_path)
+	var scenes: Array[String] = ["scenes/galgame_presenter.tscn", "examples/galgame_demo.tscn"]
+	for file in DirAccess.get_files_at(module_root.path_join("scenes/galgame")):
+		if file.ends_with(".tscn"): scenes.append("scenes/galgame/" + file)
+	for file in scenes:
+		var resource := load(module_root.path_join(file)) as PackedScene
+		var view := resource.instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE)
+		var authored := _state(view)
 		var container := Control.new()
 		container.size = Vector2(1280, 720)
-		viewport.add_child(container)
+		host.add_child(container)
 		container.add_child(view)
-		for i in range(12): await host.get_tree().process_frame
-		var preview: Node = view.get_node("EditorPreview")
-		check(preview._built, "editor preview builds: " + file)
-		check(view.theme != null and view.theme.default_font_size == 16, "shared editor theme: " + file)
-		if "--story-editor-render" in OS.get_cmdline_user_args():
-			RenderingServer.force_draw(false)
-			viewport.get_texture().get_image().save_png("user://editor-" + file.get_file() + ".png")
-		if view is StoryMenuPage:
-			check(view.heading.text == view.title and view.size == Vector2(1280, 720), "page title and virtual canvas: " + file)
-			if file == "galgame/menu_page":
-				check(view.page == "shell" and view.body.get_child_count() == 0, "base menu previews only its authored shell")
-			if file == "galgame/slots":
-				check(view.page == "slots" and view.fields.is_empty(), "base slots previews cards without settings controls")
-			if view.page == "settings":
-				check(view.fields.size() > 0 and view.preview != null, "settings shows real fields and dialogue preview")
-				preview.settings_section = "sound"
-				preview._refresh()
-				for i in range(6): await host.get_tree().process_frame
-				check(view.preview == null and view.fields.has("master"), "Inspector switches preview to sound category")
-			elif view.page in ["slots", "save", "load"]:
-				check(view._slot_cards.size() == 6, "six actual slot templates in editor")
-				check(view._slot_cards[0].stamp.text.contains("编辑预览"), "slot preview uses sample data")
-		elif view is StoryGalgamePresenter:
-			check(not view._initialized and view.menu.navigator.get_child_count() == 0, "editor never starts runtime or Cherry navigation")
-			check(view.choices_panel.get_child_count() == 3 and not view.dialogue.text.text.is_empty(), "editor shows dialogue and choice templates")
-			check(view.dialogue.size.y == 185, "editor-only label padding cannot inflate the default dialogue")
-			preview.settings = {"font_size": 36, "line_height": 2.2}
-			preview._refresh()
-			check(is_equal_approx(view.dialogue.size.y, 36 * 2.2 * 2 + 102), "editor fits large text with the same height calculation as runtime")
-		elif view is StoryDialogueBox:
-			check(view.text.get_theme_stylebox("normal") is StyleBoxEmpty, "editor text field background cannot leak into dialogue")
-			check(view.speaker.get_theme_stylebox("normal").get_margin(SIDE_LEFT) == 0, "editor label padding cannot move the nameplate")
-			preview.settings = {"palette": "mint", "glass": true}
-			preview._refresh()
-			check(view.glass.visible and view.text.get_theme_color("default_color") == Color("36564d"), "Inspector preview settings use actual glass and text styles")
-			(view.get_theme_stylebox("panel") as StyleBoxFlat).corner_radius_top_left = 29
-		var nodes_before := _count(view)
+		for i in range(6): await host.get_tree().process_frame
+		check(_state(view) == authored, "opening keeps authored nodes and content: " + file)
+		check(_passive(view, module_root), "UI template has no editor generator or tool script: " + file)
+		if view.has_node("Sheet/Margin/Layout/Header/Heading"):
+			check(view.get_node("Sheet/Margin/Layout/Header/Heading").text == view.get("title"),
+				"page heading is authored in the template: " + file)
+		# Edit a real authored label, then verify neither save notifications nor
+		# scene switching replace the designer's text with sample data.
+		var label := view.find_children("*", "Label", true, false)
+		for candidate in label:
+			# Nested scene internals are edited in their own template, not by
+			# changing a read-only child of the demo's presenter instance.
+			if candidate.owner == view:
+				candidate.text = "Authored edit"
+				break
+		var edited := _state(view)
 		view.propagate_notification(Node.NOTIFICATION_EDITOR_PRE_SAVE)
-		check(not preview._built and preview._generated.is_empty(), "save excludes generated editor content: " + file)
-		if view is StoryDialogueBox:
-			check(view.get_theme_stylebox("panel").corner_radius_top_left == 29, "saving preserves Inspector edits to a previewed StyleBox")
-			check(view.text.text.is_empty() and not view.glass.visible, "save restores authored text and glass visibility")
 		var saved := PackedScene.new()
-		check(saved.pack(view) == OK, "authored scene still serializes: " + file)
+		check(saved.pack(view) == OK, "template saves normally: " + file)
 		view.propagate_notification(Node.NOTIFICATION_EDITOR_POST_SAVE)
-		for i in range(8): await host.get_tree().process_frame
-		check(preview._built and _count(view) == nodes_before, "preview restores once after save: " + file)
-		var text_before := _texts(view)
-		# Scene tabs retain the same instance off-tree. _ready is not called on
-		# returning to the tab, unlike loading a new copy of the PackedScene.
-		for cycle in range(3):
+		var restored := saved.instantiate()
+		check(_state(restored) == edited, "template reload preserves authored edits: " + file)
+		restored.free()
+		for cycle in range(2):
 			container.remove_child(view)
 			for i in range(2): await host.get_tree().process_frame
-			check(not preview._built and preview._generated.is_empty(), "inactive scene releases its preview: " + file)
 			container.add_child(view)
-			for i in range(8): await host.get_tree().process_frame
-			check(preview._built and _count(view) == nodes_before and _texts(view) == text_before,
-				"returning to scene restores content exactly once: %s (%d)" % [file, cycle])
-		viewport.queue_free()
-		for i in range(4): await host.get_tree().process_frame
-	var demo: Control = load(module_root.path_join("examples/galgame_demo.tscn")).instantiate()
-	var demo_viewport := SubViewport.new()
-	demo_viewport.size = Vector2i(1280, 720)
-	demo_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	host.add_child(demo_viewport)
-	demo_viewport.add_child(demo)
-	for i in range(12): await host.get_tree().process_frame
-	var presenter: StoryGalgamePresenter = demo.get_node("Presenter")
-	check(presenter.background.texture == presenter.backdrop and presenter.portrait.texture != null, "Demo editor preview uses configured character and backdrop")
-	check(presenter.dialogue.speaker.text == presenter.characters[0].display_name, "Demo editor preview uses configured character name")
-	check(not demo.get_node("StoryPlayer").is_playing, "Demo editor preview does not start the story")
-	if "--story-editor-render" in OS.get_cmdline_user_args():
-		RenderingServer.force_draw(false)
-		demo_viewport.get_texture().get_image().save_png("user://editor-demo.png")
-	demo_viewport.queue_free()
-	for i in range(4): await host.get_tree().process_frame
-	check(AudioServer.bus_count == bus_count, "preview never changes game audio buses")
-	check(not FileAccess.file_exists("user://cherry_galgame/settings.cfg"), "preview never writes player settings")
+			for i in range(6): await host.get_tree().process_frame
+			check(_state(view) == edited, "switching scene keeps template unchanged: " + file)
+		container.queue_free()
+		for i in range(3): await host.get_tree().process_frame
 	await _check_editor_tabs(host, module_root)
-	print("Galgame editor preview: %d passed, %d failed" % [checks - failures, failures])
+	check(AudioServer.bus_count == bus_count, "opening templates never changes audio buses")
+	check(not FileAccess.file_exists("user://cherry_galgame/settings.cfg"), "opening templates never writes player settings")
+	print("Galgame editor templates: %d passed, %d failed" % [checks - failures, failures])
 	return {"checks": checks, "failures": failures}
 
-func _count(node: Node) -> int:
-	var count := 1
-	for child in node.get_children(): count += _count(child)
-	return count
-
-func _texts(node: Node) -> Array[String]:
-	var result: Array[String] = []
-	if node is Label or node is RichTextLabel or node is Button:
-		result.append(node.text)
-	for child in node.get_children(): result.append_array(_texts(child))
-	result.sort()
+func _state(node: Node) -> Array:
+	# Container-computed rectangles are intentionally excluded: Godot's layout
+	# engine still runs normally. Content and node structure must remain static.
+	var result: Array = [node.name, node.get_class()]
+	if node is Label or node is RichTextLabel or node is Button: result.append(node.text)
+	if node is Button: result.append(node.icon.resource_path if node.icon != null else "")
+	if node is TextureRect: result.append(node.texture.resource_path if node.texture != null else "")
+	for child in node.get_children(): result.append(_state(child))
 	return result
 
+func _passive(node: Node, module_root: String) -> bool:
+	if node.name == "EditorPreview": return false
+	var script := node.get_script() as Script
+	# StoryPlayer's existing @tool declaration registers export dependencies;
+	# it is not a UI renderer and must remain available to the export pipeline.
+	if script != null and script.resource_path.begins_with(module_root.path_join("gdscript/")):
+		if not script.resource_path.ends_with("/story_player.gd") and script.is_tool(): return false
+	for child in node.get_children():
+		if child.owner == null or not _passive(child, module_root): return false
+	return true
+
 func _check_editor_tabs(host: EditorPlugin, module_root: String) -> void:
-	# Also switch actual editor tabs, so the test covers the editor's retained
-	# scene instances instead of only approximating their tree lifecycle.
 	var snapshots := {}
 	for page in ["settings", "save", "backlog", "settings", "flow", "save", "backlog", "settings"]:
 		var path := module_root.path_join("scenes/galgame/%s.tscn" % page)
 		EditorInterface.open_scene_from_path(path)
-		for i in range(12): await host.get_tree().process_frame
+		for i in range(8): await host.get_tree().process_frame
 		var root := EditorInterface.get_edited_scene_root()
-		check(root != null and root.scene_file_path == path, "editor activates scene tab: " + page)
+		check(root != null and root.scene_file_path == path, "editor activates template tab: " + page)
 		if root == null or root.scene_file_path != path: continue
-		var preview := root.get_node("EditorPreview")
-		check(preview._built, "active editor tab has preview content: " + page)
+		check(_passive(root, module_root), "editor tab only contains authored controls: " + page)
 		if snapshots.has(page):
-			check(root == snapshots[page].root and _texts(root) == snapshots[page].text and _count(root) == snapshots[page].count,
-				"editor tab keeps instance and restores all content: " + page)
+			check(root == snapshots[page].root and _state(root) == snapshots[page].state,
+				"editor tab preserves template content: " + page)
 		else:
-			snapshots[page] = {"root": root, "text": _texts(root), "count": _count(root)}
+			snapshots[page] = {"root": root, "state": _state(root)}

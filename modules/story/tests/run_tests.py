@@ -155,7 +155,7 @@ renderer/rendering_method="gl_compatibility"
         if test == 'galgame_resource_load_test.gd':
             # Separate engine processes are essential: a preceding presenter
             # load can make a circular script/scene dependency appear valid.
-            entries = ['editor/story_scene_preview.gd', 'gdscript/story_galgame_menus.gd',
+            entries = ['gdscript/story_galgame_menus.gd',
                        'resources/galgame_pages.tres', 'scenes/galgame_presenter.tscn',
                        'examples/galgame_demo.tscn']
             entries += [f'scenes/galgame/{path.name}'

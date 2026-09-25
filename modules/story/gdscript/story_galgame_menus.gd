@@ -1,12 +1,11 @@
-@tool
 class_name StoryGalgameMenus
 extends Control
 ## Cherry owns route lifetime, covered input/focus, modal scrims and transitions.
 ## Local tab/slot state belongs to the mounted StoryMenuPage, never this router.
 
 ## Supplied by menus.tscn, keeping the dependency direction scene -> script.
-## A script preload here creates a cycle through page scenes -> EditorPreview
-## -> this class, and fails when the editor loads a component before the shell.
+## Page scenes reference this class too; keeping their catalog in the scene
+## avoids a script-to-scene preload cycle and allows project-specific routes.
 @export var page_catalog: Resource
 var presenter: StoryGalgamePresenter
 var skin: StorySkin
@@ -49,7 +48,6 @@ func _definition(identity: String) -> PageDefinition:
 	return page_catalog.get_meta("pages").get(identity) as PageDefinition
 
 func open(target: String) -> void:
-	if Engine.is_editor_hint(): return
 	if navigator.is_operating: return
 	if active_page != null and page == target:
 		if target == "settings": active_page.select_section(section_id)
@@ -74,11 +72,9 @@ func _prepare_transition(incoming: NavigationPage) -> void:
 			(incoming.route.transition as TweenNavigationTransition).duration = 0.0
 
 func back() -> void:
-	if Engine.is_editor_hint(): return
 	navigator.maybe_pop()
 
 func close() -> void:
-	if Engine.is_editor_hint(): return
 	# Load/restart closes the complete flow; ordinary Back pops just one route.
 	navigator.pop_until(func(entry): return entry == navigator.first_route)
 
@@ -88,7 +84,6 @@ func _navigation_changed(_pending: int) -> void:
 	if not is_open: presenter.replay_player.stop()
 
 func _input(_event: InputEvent) -> void:
-	if Engine.is_editor_hint(): return
 	# Both scenes remain mounted during transitions. Gate keyboard events too,
 	# until Cherry commits the new route and applies its covered-input policy.
 	if navigator != null and navigator.is_operating:
@@ -104,7 +99,6 @@ func update_skin(_key: String) -> void:
 	if not presenter.preferences.last_error.is_empty(): notify_user(presenter.preferences.last_error)
 
 func confirm(title: String, message: String, action: Callable) -> void:
-	if Engine.is_editor_hint(): return
 	if navigator.is_operating or confirmation != null or not is_open: return
 	var entry := navigator.push_definition_configured(_definition("confirm"), func(dialog: StoryConfirmationPage):
 		_prepare_transition(dialog)
@@ -117,7 +111,6 @@ func dismiss_confirmation() -> bool:
 	return navigator.maybe_pop(false)
 
 func notify_user(message: String) -> void:
-	if Engine.is_editor_hint(): return
 	_toast_generation += 1
 	var generation := _toast_generation
 	(toast.get_child(0) as Label).text = message

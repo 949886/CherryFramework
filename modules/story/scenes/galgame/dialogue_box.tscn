@@ -1,8 +1,8 @@
 [gd_scene format=3]
+[ext_resource type="Texture2D" path="../../icons/galgame/voice.svg" id="icon_voice"]
 [ext_resource type="Script" path="../../gdscript/story_dialogue_box.gd" id="script"]
 [ext_resource type="Shader" path="../../resources/dialogue_glass.gdshader" id="shader"]
 [ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
-[ext_resource type="Script" path="../../editor/story_scene_preview.gd" id="editor_preview"]
 
 [sub_resource type="ShaderMaterial" id="glass"]
 resource_local_to_scene = true
@@ -85,6 +85,7 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 
 [node name="Icon" type="TextureRect" parent="Margin/Content/Voice"]
+texture = ExtResource("icon_voice")
 layout_mode = 2
 custom_minimum_size = Vector2(16, 16)
 mouse_filter = 2
@@ -123,7 +124,3 @@ theme_type_variation = "StorySpeaker"
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "CHARACTER"
-
-[node name="EditorPreview" type="Node" parent="."]
-script = ExtResource("editor_preview")
-kind = "dialogue"

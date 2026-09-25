@@ -1,4 +1,3 @@
-@tool
 class_name StoryChoiceButton
 extends Button
 ## A single interpolated style covers mouse, keyboard and confirmation states.

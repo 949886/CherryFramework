@@ -6,3 +6,6 @@
 navigation_path = "ui://cherry/story/backlog"
 page = "backlog"
 title = "回顾"
+
+[node name="Heading" parent="Sheet/Margin/Layout/Header"]
+text = "回顾"

@@ -1,4 +1,3 @@
-@tool
 class_name StorySkin
 extends RefCounted
 ## Shared native drawing tokens. Dialogue and settings preview deliberately use
@@ -146,7 +145,7 @@ func button(text: String, callback: Callable, minimum := Vector2.ZERO, icon_id :
 	if not icon_id.is_empty(): result.icon = icon(icon_id)
 	result.custom_minimum_size = minimum
 	result.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	if callback.is_valid() and not Engine.is_editor_hint():
+	if callback.is_valid():
 		result.pressed.connect(callback)
 	return result
 

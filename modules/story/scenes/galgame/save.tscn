@@ -6,3 +6,9 @@
 navigation_path = "ui://cherry/story/save"
 page = "save"
 title = "存档"
+
+[node name="Heading" parent="Sheet/Margin/Layout/Header"]
+text = "存档"
+
+[node name="Automatic" parent="Sheet/Margin/Layout/Body/Layout/Navigation"]
+visible = false

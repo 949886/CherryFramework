@@ -1,4 +1,5 @@
 [gd_scene format=3]
+[ext_resource type="Texture2D" path="../../icons/galgame/back.svg" id="icon_back"]
 
 [ext_resource type="Script" path="../../gdscript/story_menu_page.gd" id="script"]
 [ext_resource type="Resource" path="../../resources/galgame_page_transition.tres" id="transition"]
@@ -6,7 +7,6 @@
 [ext_resource type="PackedScene" path="dialogue_preview.tscn" id="preview"]
 
 [ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="editor_theme"]
-[ext_resource type="Script" path="../../editor/story_scene_preview.gd" id="editor_preview"]
 
 [node name="MenuPage" type="Control"]
 theme = ExtResource("editor_theme")
@@ -53,6 +53,7 @@ theme_override_font_sizes/font_size = 28
 text = "菜单"
 
 [node name="Back" type="Button" parent="Sheet/Margin/Layout/Header"]
+icon = ExtResource("icon_back")
 layout_mode = 2
 custom_minimum_size = Vector2(104, 42)
 mouse_default_cursor_shape = 2
@@ -64,7 +65,3 @@ layout_mode = 2
 [node name="Body" type="Control" parent="Sheet/Margin/Layout"]
 layout_mode = 2
 size_flags_vertical = 3
-
-[node name="EditorPreview" type="Node" parent="."]
-script = ExtResource("editor_preview")
-kind = "menu"
