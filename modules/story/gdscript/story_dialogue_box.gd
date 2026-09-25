@@ -6,6 +6,8 @@ var text: RichTextLabel
 var speaker: Label
 var roman: Label
 var voice: Label
+var voice_row: HBoxContainer
+var voice_icon: TextureRect
 var nameplate: PanelContainer
 var glass: ColorRect
 var content: VBoxContainer
@@ -42,10 +44,20 @@ func _init() -> void:
 	# from its advance gesture while ordinary clicks still advance the story.
 	text.mouse_filter = Control.MOUSE_FILTER_PASS
 	content.add_child(text)
+	voice_row = HBoxContainer.new()
+	voice_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	voice_row.add_theme_constant_override("separation", 8)
+	content.add_child(voice_row)
+	voice_icon = TextureRect.new()
+	voice_icon.custom_minimum_size = Vector2(16, 16)
+	voice_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	voice_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	voice_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	voice_row.add_child(voice_icon)
 	voice = Label.new()
-	voice.text = "▥  MAHIRO"
+	voice.text = "MAHIRO"
 	voice.add_theme_font_size_override("font_size", 12)
-	content.add_child(voice)
+	voice_row.add_child(voice)
 	nameplate = PanelContainer.new()
 	nameplate.set_as_top_level(false)
 	# Top-level container children are laid out by PanelContainer. The nameplate
@@ -78,7 +90,9 @@ func apply_skin(skin: StorySkin) -> void:
 	for label_node in [speaker, roman]:
 		label_node.add_theme_color_override("font_color", skin.colors.name_ink)
 	voice.add_theme_color_override("font_color", skin.colors.accent)
-	voice.visible = bool(settings.voice_badge) and not narration
+	voice_icon.texture = skin.icon("voice", int(voice_icon.custom_minimum_size.x))
+	voice_icon.self_modulate = skin.colors.accent
+	voice_row.visible = bool(settings.voice_badge) and not narration
 	nameplate.visible = not narration
 	skin.style_body(text)
 	glass.visible = bool(settings.glass)

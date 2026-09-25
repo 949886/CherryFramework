@@ -59,6 +59,12 @@ func _run() -> void:
 	check(native.preferences.schema.get("sections", []).size() == 5, "galgame settings schema exported")
 	check(native.library.nodes.size() == 8 and native.library.errors.is_empty(), "galgame file graph exported")
 	check(native.backdrop != null and native.characters[0].states[1].portrait != null, "galgame supplied images exported")
+	# Texture references must survive selected-scene packing without the source
+	# directory, system icon fonts, or a developer's import cache as fallbacks.
+	for identity in StorySkin.ICONS.get_meta("icons"):
+		var texture := native.skin.icon(identity)
+		check(texture != null and texture.get_width() > 0, "exported native SVG icon: " + identity)
+		check(texture is DPITexture and not texture.get_source().is_empty(), "export preserves scalable SVG source: " + identity)
 	native.preferences.set_value("instant", true)
 	native.preferences.set_value("motion", "reduced")
 	for step in range(20):

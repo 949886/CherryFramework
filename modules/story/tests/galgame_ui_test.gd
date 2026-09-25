@@ -44,6 +44,17 @@ func _run() -> void:
 	check(presenter.library.nodes.size() == 8, "eight real script files")
 	check(presenter.library.edges.size() == 9, "branch and rejoin edges")
 	check(presenter.library.errors.is_empty(), "all script files compile")
+	for button in presenter.footer_buttons.values():
+		check(button.icon != null and button.icon.get_width() > 0, "footer icon loads without a font glyph: " + button.text)
+		check(button.icon is DPITexture, "footer retains SVG source for sharp window scaling: " + button.text)
+	check(presenter.skin.icon("cherry", 24).get_width() == 24, "brand mark rasterizes at its own logical size")
+	check(presenter.dialogue.voice_icon.texture.get_width() == 16, "voice badge rasterizes at its own logical size")
+	presenter.auto_play = true
+	presenter.advance_time(0)
+	check(presenter.footer_buttons.auto.icon == presenter.skin.icon("pause"), "auto playback displays pause artwork")
+	presenter.auto_play = false
+	presenter.advance_time(0)
+	check(presenter.footer_buttons.auto.icon == presenter.skin.icon("play"), "stopping auto playback restores play artwork")
 	# Advance the greeting into the file containing the three choices.
 	for i in range(12):
 		if presenter._state.mode == "choice": break
@@ -56,7 +67,7 @@ func _run() -> void:
 	check(presenter.dialogue.visible, "dialogue preserved behind choices")
 	check(is_equal_approx(presenter.dialogue.position.y - presenter.choice_scroll.get_rect().end.y, 28), "choices anchored at 28 units")
 	await capture("galgame-play")
-	for dimensions in [Vector2(1280, 720), Vector2(1600, 900), Vector2(1920, 1200), Vector2(900, 900)]:
+	for dimensions in [Vector2(1280, 720), Vector2(1600, 900), Vector2(1920, 1080), Vector2(2560, 1440), Vector2(3840, 2160), Vector2(1920, 1200), Vector2(900, 900)]:
 		root.size = Vector2i(dimensions)
 		await settle()
 		var drawn := presenter.stage.size * presenter.stage.scale
@@ -89,6 +100,8 @@ func _run() -> void:
 	check(presenter.menu.rows.glass_blur.visible and presenter.dialogue.glass.visible and presenter.menu.preview.glass.visible, "glass setting reaches both views and conditional fields")
 	await capture("galgame-settings-glass")
 	presenter.preferences.set_value("palette", "mint")
+	check(presenter.footer_buttons.save.get_theme_color("icon_normal_color") == presenter.skin.colors.ink, "SVG buttons follow palette changes")
+	check(presenter.dialogue.voice_icon.self_modulate == presenter.skin.colors.accent, "voice SVG follows palette changes")
 	check(presenter.menu.preview.text.get_theme_color("default_color") == presenter.dialogue.text.get_theme_color("default_color"), "palette propagates to both dialogue instances")
 	await capture("galgame-settings-mint")
 	presenter.preferences.set_value("palette", "peach")

@@ -3,11 +3,14 @@ extends RefCounted
 ## Shared native drawing tokens. Dialogue and settings preview deliberately use
 ## the same component and fonts rather than separately approximated styles.
 
+const ICONS = preload("../resources/galgame_icons.tres")
+
 var preferences: StoryPreferences
 var colors: Dictionary = {}
 var ui_font: SystemFont
 var body_font: FontVariation
 var theme: Theme
+var _sized_icons: Dictionary = {}
 
 func _init(settings: StoryPreferences) -> void:
 	preferences = settings
@@ -41,6 +44,14 @@ func rebuild() -> void:
 		theme.set_color("font_focus_color", type, colors.accent)
 		theme.set_color("font_hover_pressed_color", type, colors.accent)
 		theme.set_color("font_disabled_color", type, colors.muted)
+	# White SVG artwork is tinted by the native button state, independently of
+	# the selected text font. Keep disabled and keyboard-focus states legible.
+	for type in ["Button", "OptionButton"]:
+		for state in ["normal", "hover", "pressed", "focus", "hover_pressed", "disabled"]:
+			theme.set_color("icon_" + state + "_color", type, colors.ink if state == "normal" else (colors.muted if state == "disabled" else colors.accent))
+		theme.set_constant("h_separation", type, 7)
+	theme.set_icon("arrow", "OptionButton", icon("chevron-down"))
+	theme.set_constant("modulate_arrow", "OptionButton", 1)
 	for type in ["Button", "OptionButton", "LineEdit"]:
 		theme.set_stylebox("normal", type, box(colors.paper, colors.line, 8, 12))
 		theme.set_stylebox("hover", type, box(colors.soft, colors.line, 8, 12))
@@ -56,9 +67,8 @@ func rebuild() -> void:
 		track.content_margin_bottom = 3
 		theme.set_stylebox(key, "HSlider", track)
 	for key in ["grabber", "grabber_highlight"]:
-		var icon := Image.new()
-		icon.load_svg_from_string('<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="7" fill="#%s" stroke="#%s" stroke-width="2"/></svg>' % [colors.paper.to_html(false), colors.accent.to_html(false)])
-		theme.set_icon(key, "HSlider", ImageTexture.create_from_image(icon))
+		var grabber := DPITexture.create_from_string('<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="7" fill="#%s" stroke="#%s" stroke-width="2"/></svg>' % [colors.paper.to_html(false), colors.accent.to_html(false)])
+		theme.set_icon(key, "HSlider", grabber)
 	theme.set_stylebox("background", "ProgressBar", box(colors.line, Color.TRANSPARENT, 4))
 	theme.set_stylebox("fill", "ProgressBar", box(colors.accent, Color.TRANSPARENT, 4))
 	var separator := StyleBoxLine.new()
@@ -89,11 +99,48 @@ func label(text: String, font_size := 16, color_key := "ink") -> Label:
 func refresh_labels(node: Node) -> void:
 	if node is Label and node.has_meta("palette_color"):
 		node.add_theme_color_override("font_color", colors[node.get_meta("palette_color")])
+	elif node is TextureRect and node.has_meta("palette_color"):
+		node.self_modulate = colors[node.get_meta("palette_color")]
 	for child in node.get_children(): refresh_labels(child)
 
-func button(text: String, callback: Callable, minimum := Vector2.ZERO) -> Button:
+func icon(identity: String, extent := 0) -> Texture2D:
+	var source := ICONS.get_meta("icons").get(identity) as Texture2D
+	if not source is DPITexture or extent <= 0 or extent == source.get_width():
+		return source
+	# Viewport oversampling handles window/HiDPI scaling. A TextureRect's own
+	# size (e.g. the larger brand mark) also needs matching logical SVG density.
+	# Cache these variants without mutating the shared button texture resource.
+	var key := "%s:%d" % [identity, extent]
+	if not _sized_icons.has(key):
+		var sized := source.duplicate() as DPITexture
+		sized.base_scale *= float(extent) / source.get_width()
+		_sized_icons[key] = sized
+	return _sized_icons[key]
+
+func icon_view(identity: String, extent := 18, color_key := "ink") -> TextureRect:
+	var result := TextureRect.new()
+	result.texture = icon(identity, extent)
+	result.custom_minimum_size = Vector2.ONE * extent
+	result.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	result.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	result.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	result.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	result.self_modulate = colors[color_key]
+	result.set_meta("palette_color", color_key)
+	return result
+
+func icon_label(identity: String, text: String, font_size := 16, color_key := "ink") -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 8)
+	row.add_child(icon_view(identity, font_size, color_key))
+	row.add_child(label(text, font_size, color_key))
+	return row
+
+func button(text: String, callback: Callable, minimum := Vector2.ZERO, icon_id := "") -> Button:
 	var result := Button.new()
 	result.text = text
+	if not icon_id.is_empty(): result.icon = icon(icon_id)
 	result.custom_minimum_size = minimum
 	result.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	if callback.is_valid():

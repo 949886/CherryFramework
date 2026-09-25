@@ -129,7 +129,7 @@ func _build_chrome() -> void:
 	chrome.size = stage_size
 	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stage.add_child(chrome)
-	var brand := skin.label("♧  " + game_title, 24)
+	var brand := skin.icon_label("cherry", game_title, 24)
 	brand.position = Vector2(32, 24)
 	chrome.add_child(brand)
 	location_label = skin.label("黄昏 / 客厅", 14, "muted")
@@ -145,14 +145,14 @@ func _build_chrome() -> void:
 	footer.add_theme_constant_override("separation", 3)
 	chrome.add_child(footer)
 	var actions := [
-		["backlog", "◷ 回顾", func(): open_menu("backlog")],
-		["auto", "▷ 自动", toggle_auto], ["save", "♧ 存档", func(): open_menu("save")],
-		["load", "▱ 读档", func(): open_menu("load")], ["hide", "◉ 隐藏", toggle_hidden],
-		["flow", "◇ 流程图", func(): open_menu("flow")], ["skip", "▹▹ 快进", toggle_skip],
-		["settings", "⚙ 设置", func(): open_menu("settings")],
+		["backlog", "回顾", func(): open_menu("backlog"), "history"],
+		["auto", "自动", toggle_auto, "play"], ["save", "存档", func(): open_menu("save"), "save"],
+		["load", "读档", func(): open_menu("load"), "load"], ["hide", "隐藏", toggle_hidden, "eye"],
+		["flow", "流程图", func(): open_menu("flow"), "flow"], ["skip", "快进", toggle_skip, "fast-forward"],
+		["settings", "设置", func(): open_menu("settings"), "settings"],
 	]
 	for action in actions:
-		var button := skin.button(action[1], action[2], Vector2(83, 34))
+		var button := skin.button(action[1], action[2], Vector2(83, 34), action[3])
 		button.flat = true
 		button.add_theme_font_size_override("font_size", 14)
 		footer.add_child(button)
@@ -203,7 +203,7 @@ func _begin(mode: String, payload: Dictionary) -> int:
 		for character in characters:
 			if character.display_name == speaker_label.text:
 				dialogue.roman.text = String(character.id).to_upper()
-				dialogue.voice.text = "▥  " + dialogue.roman.text
+				dialogue.voice.text = dialogue.roman.text
 				break
 	_line_read = archive.begin_presentation(payload)
 	if not _line_read and not preferences.values.skip_unread: fast_forward = false
@@ -231,7 +231,9 @@ func _build_choices(payload: Dictionary) -> void:
 	for index in options.size():
 		var button := StoryChoiceButton.new()
 		button.configure(skin)
-		button.text = "%02d    %s    ›" % [index + 1, String(options[index].get("text", ""))]
+		button.text = "%02d    %s" % [index + 1, String(options[index].get("text", ""))]
+		button.icon = skin.icon("chevron-right")
+		button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.custom_minimum_size = Vector2(0, 60)
 		button.add_theme_font_size_override("font_size", 18)
@@ -293,8 +295,8 @@ func advance_time(delta: float) -> void:
 	if hold_auto: auto_play = true
 	var duck: bool = preferences.values.duck_music and (audio_player.playing or replay_player.playing)
 	music_player.volume_db = -10.0 if duck else 0.0
-	footer_buttons.auto.text = "Ⅱ 自动" if auto_play else "▷ 自动"
-	footer_buttons.skip.text = "Ⅱ 快进" if fast_forward else "▹▹ 快进"
+	footer_buttons.auto.icon = skin.icon("pause" if auto_play else "play")
+	footer_buttons.skip.icon = skin.icon("pause" if fast_forward else "fast-forward")
 
 func _settings_changed(key: String) -> void:
 	if not _initialized: return

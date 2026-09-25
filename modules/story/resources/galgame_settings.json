@@ -15,7 +15,7 @@
     "adaptive": {"label":"跟随系统","inherit":"cream"}
   },
   "sections": [
-    {"id":"text","title":"文字样式","preview":true,"fields":[
+    {"id":"text","icon":"text","title":"文字样式","preview":true,"fields":[
       {"key":"font","label":"正文字体","type":"select","default":"sans","options":{"sans":"清晰黑体","rounded":"柔和圆体","serif":"经典明朝"}},
       {"key":"font_size","label":"文字大小","type":"range","default":23,"min":16,"max":36,"step":1,"unit":"px"},
       {"key":"weight","label":"文字粗细","type":"select","default":"regular","options":{"regular":"常规","medium":"中等","bold":"加粗"}},
@@ -25,7 +25,7 @@
       {"key":"theme_text","label":"文字颜色跟随配色","type":"check","default":true},
       {"key":"text_color","label":"自定义文字颜色","type":"color","default":"#65535d","when":{"theme_text":false}}
     ]},
-    {"id":"reading","title":"阅读播放","preview":true,"fields":[
+    {"id":"reading","icon":"reading","title":"阅读播放","preview":true,"fields":[
       {"key":"speed","label":"文字显示速度","type":"range","default":30,"min":5,"max":100,"step":1,"unit":"字/秒"},
       {"key":"instant","label":"立即显示整句","type":"check","default":false},
       {"key":"auto_delay","label":"自动播放间隔","type":"range","default":3.5,"min":0.5,"max":10,"step":0.5,"unit":"秒"},
@@ -34,7 +34,7 @@
       {"key":"skip_speed","label":"快进倍率","type":"range","default":8,"min":2,"max":30,"step":1,"unit":"倍"},
       {"key":"keep_voice","label":"推进对白后保留语音","type":"check","default":false}
     ]},
-    {"id":"sound","title":"声音","preview":false,"fields":[
+    {"id":"sound","icon":"volume","title":"声音","preview":false,"fields":[
       {"key":"master","label":"总音量","type":"range","default":80,"min":0,"max":100,"step":1,"unit":"%"},
       {"key":"music","label":"背景音乐","type":"range","default":55,"min":0,"max":100,"step":1,"unit":"%"},
       {"key":"voice","label":"角色语音","type":"range","default":90,"min":0,"max":100,"step":1,"unit":"%"},
@@ -42,7 +42,7 @@
       {"key":"mute","label":"静音","type":"check","default":false},
       {"key":"duck_music","label":"播放语音时降低背景音乐","type":"check","default":true}
     ]},
-    {"id":"display","title":"画面与界面","preview":true,"fields":[
+    {"id":"display","icon":"display","title":"画面与界面","preview":true,"fields":[
       {"key":"palette","label":"界面配色","type":"palette","default":"peach"},
       {"key":"opacity","label":"纯色模式不透明度","type":"range","default":100,"min":40,"max":100,"step":1,"unit":"%"},
       {"key":"voice_badge","label":"显示语音标记","type":"check","default":true},
@@ -54,7 +54,7 @@
       {"key":"glass_tint","label":"玻璃底色浓度","type":"range","default":70,"min":15,"max":95,"step":1,"unit":"%","when":{"glass":true}},
       {"key":"glass_saturation","label":"背景饱和度","type":"range","default":145,"min":50,"max":200,"step":1,"unit":"%","when":{"glass":true}}
     ]},
-    {"id":"system","title":"操作与存档","preview":false,"fields":[
+    {"id":"system","icon":"system","title":"操作与存档","preview":false,"fields":[
       {"key":"confirm_overwrite","label":"覆盖存档前确认","type":"check","default":true},
       {"key":"confirm_load","label":"读取存档前确认","type":"check","default":true},
       {"key":"autosave","label":"遇到选项时自动存档","type":"check","default":true},

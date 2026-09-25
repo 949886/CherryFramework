@@ -48,7 +48,7 @@ func configure(owner_presenter: StoryGalgamePresenter) -> void:
 	heading = skin.label("设置", 28)
 	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(heading)
-	header.add_child(skin.button("返回  ×", presenter.close_menu, Vector2(104, 42)))
+	header.add_child(skin.button("返回", presenter.close_menu, Vector2(104, 42), "back"))
 	layout.add_child(HSeparator.new())
 	body = Control.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -158,7 +158,7 @@ func _settings() -> void:
 	for section in presenter.preferences.schema.sections:
 		var button := skin.button(section.title, func():
 			section_id = section.id
-			open("settings"), Vector2(180, 52))
+			open("settings"), Vector2(180, 52), section.get("icon", ""))
 		button.toggle_mode = true
 		button.button_pressed = section.id == section_id
 		tabs.add_child(button)
@@ -167,7 +167,7 @@ func _settings() -> void:
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	tabs.add_child(spacer)
 	tabs.add_child(skin.button("重置本页", func():
-		confirm("恢复默认设置？", "只重置当前分类，其他设置会保留。", func(): presenter.preferences.reset_section(section_id))))
+		confirm("恢复默认设置？", "只重置当前分类，其他设置会保留。", func(): presenter.preferences.reset_section(section_id)), Vector2.ZERO, "restart"))
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -184,10 +184,10 @@ func _settings() -> void:
 		content.add_child(skin.label("试听", 20))
 		var samples := HBoxContainer.new()
 		content.add_child(samples)
-		samples.add_child(skin.button("角色语音", _replay_current_voice))
+		samples.add_child(skin.button("角色语音", _replay_current_voice, Vector2.ZERO, "voice"))
 		samples.add_child(skin.button("界面音效", func():
 			if presenter.effect_stream != null: presenter.effect_player.play()
-			else: notify_user("当前故事未配置界面音效。")))
+			else: notify_user("当前故事未配置界面音效。"), Vector2.ZERO, "volume"))
 	if section_id == "system":
 		content.add_child(skin.label("快捷键", 20))
 		var keys := skin.label("空格 / Enter / 左键：推进    Esc：返回\nA：自动    Ctrl：切换快进    H：隐藏\nS：存档    L：读档    B：回顾    M：流程图", 16, "muted")
@@ -196,7 +196,7 @@ func _settings() -> void:
 			confirm("重新开始？", "当前未保存的进度将丢失，存档与已读记录会保留。", func():
 				presenter.archive.history.clear()
 				presenter.archive.player.restart()
-				presenter.close_menu())))
+				presenter.close_menu()), Vector2.ZERO, "restart"))
 
 func _add_preview(content: VBoxContainer) -> void:
 	var frame := Control.new()
@@ -233,7 +233,7 @@ func _add_preview(content: VBoxContainer) -> void:
 	fit.call_deferred()
 	_preview_clock = 0.0
 	if section_id == "reading":
-		content.add_child(skin.button("重播文字预览", func(): _preview_clock = 0.0))
+		content.add_child(skin.button("重播文字预览", func(): _preview_clock = 0.0, Vector2.ZERO, "restart"))
 
 func _process(delta: float) -> void:
 	if visible and page == "settings" and is_instance_valid(preview):
@@ -329,7 +329,7 @@ func _slots() -> void:
 	navigation.add_child(skin.label("%d 个栏位" % presenter.archive.slot_count, 14, "muted"))
 	if page == "load":
 		navigation.add_child(skin.button("读取自动存档", func():
-			_request_load(func(): return presenter.archive.load_automatic())))
+			_request_load(func(): return presenter.archive.load_automatic()), Vector2.ZERO, "load"))
 
 func _slot_card(grid: GridContainer, index: int) -> void:
 	var slot := presenter.archive.read_slot(index)
@@ -419,11 +419,12 @@ func _backlog() -> void:
 		card.add_child(content)
 		var row := HBoxContainer.new()
 		content.add_child(row)
-		var name_label := skin.label(("◇  " if record.kind == "choice" else "") + record.speaker, 17, "accent")
+		if record.kind == "choice": row.add_child(skin.icon_view("flow", 17, "accent"))
+		var name_label := skin.label(record.speaker, 17, "accent")
 		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(name_label)
 		if not record.voice.is_empty():
-			row.add_child(skin.button("▷ 重播语音", func(): _play_voice(record.voice)))
+			row.add_child(skin.button("重播语音", func(): _play_voice(record.voice), Vector2.ZERO, "play"))
 		var text := RichTextLabel.new()
 		text.bbcode_enabled = true
 		text.fit_content = true
@@ -476,11 +477,11 @@ func confirm(title: String, message: String, action: Callable) -> void:
 	buttons.alignment = BoxContainer.ALIGNMENT_END
 	buttons.add_theme_constant_override("separation", 12)
 	content.add_child(buttons)
-	var cancel := skin.button("取消", dismiss_confirmation, Vector2(110, 40))
+	var cancel := skin.button("取消", dismiss_confirmation, Vector2(110, 40), "close")
 	buttons.add_child(cancel)
 	buttons.add_child(skin.button("确定", func():
 		dismiss_confirmation()
-		action.call(), Vector2(110, 40)))
+		action.call(), Vector2(110, 40), "check"))
 	cancel.grab_focus()
 
 func dismiss_confirmation() -> bool:
@@ -512,5 +513,5 @@ func _ending() -> void:
 	center.add_child(content)
 	content.add_child(skin.label("这一页的故事，先写到这里。", 30))
 	content.add_child(skin.label("每一次选择，都会留下不同的余韵。", 18, "muted"))
-	content.add_child(skin.button("在流程图中回望故事", func(): open("flow")))
-	content.add_child(skin.button("读取存档", func(): open("load")))
+	content.add_child(skin.button("在流程图中回望故事", func(): open("flow"), Vector2.ZERO, "flow"))
+	content.add_child(skin.button("读取存档", func(): open("load"), Vector2.ZERO, "load"))

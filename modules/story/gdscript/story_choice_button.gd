@@ -101,6 +101,10 @@ func _draw_state() -> void:
 	var ink: Color = _skin.colors.ink.lerp(_skin.colors.accent, highlight)
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color"]:
 		add_theme_color_override(state, ink)
+	# Arrow and text share the interpolated highlight rather than switching to
+	# the theme's hover color immediately during the choice animation.
+	for state in ["normal", "hover", "pressed", "hover_pressed", "focus", "disabled"]:
+		add_theme_color_override("icon_" + state + "_color", ink)
 	var progress := 1.0 if _reduced else clampf(_settle_elapsed / maxf(0.001, float(_motion.commit_duration)), 0.0, 1.0)
 	var opacity := lerpf(1.0, float(_motion.muted_alpha), 1.0 - pow(1.0 - progress, 3.0)) if settling and not selected else 1.0
 	modulate.a = opacity * (1.0 - pow(1.0 - reveal, 3.0))

@@ -1,0 +1,70 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Texture2D" path="../icons/galgame/cherry.svg" id="cherry"]
+[ext_resource type="Texture2D" path="../icons/galgame/history.svg" id="history"]
+[ext_resource type="Texture2D" path="../icons/galgame/play.svg" id="play"]
+[ext_resource type="Texture2D" path="../icons/galgame/pause.svg" id="pause"]
+[ext_resource type="Texture2D" path="../icons/galgame/save.svg" id="save"]
+[ext_resource type="Texture2D" path="../icons/galgame/load.svg" id="load"]
+[ext_resource type="Texture2D" path="../icons/galgame/eye.svg" id="eye"]
+[ext_resource type="Texture2D" path="../icons/galgame/flow.svg" id="flow"]
+[ext_resource type="Texture2D" path="../icons/galgame/fast-forward.svg" id="fast-forward"]
+[ext_resource type="Texture2D" path="../icons/galgame/settings.svg" id="settings"]
+[ext_resource type="Texture2D" path="../icons/galgame/back.svg" id="back"]
+[ext_resource type="Texture2D" path="../icons/galgame/close.svg" id="close"]
+[ext_resource type="Texture2D" path="../icons/galgame/chevron-right.svg" id="chevron-right"]
+[ext_resource type="Texture2D" path="../icons/galgame/chevron-down.svg" id="chevron-down"]
+[ext_resource type="Texture2D" path="../icons/galgame/voice.svg" id="voice"]
+[ext_resource type="Texture2D" path="../icons/galgame/volume.svg" id="volume"]
+[ext_resource type="Texture2D" path="../icons/galgame/bookmark.svg" id="bookmark"]
+[ext_resource type="Texture2D" path="../icons/galgame/bookmark-filled.svg" id="bookmark-filled"]
+[ext_resource type="Texture2D" path="../icons/galgame/read.svg" id="read"]
+[ext_resource type="Texture2D" path="../icons/galgame/check.svg" id="check"]
+[ext_resource type="Texture2D" path="../icons/galgame/locked.svg" id="locked"]
+[ext_resource type="Texture2D" path="../icons/galgame/unread.svg" id="unread"]
+[ext_resource type="Texture2D" path="../icons/galgame/current.svg" id="current"]
+[ext_resource type="Texture2D" path="../icons/galgame/minus.svg" id="minus"]
+[ext_resource type="Texture2D" path="../icons/galgame/plus.svg" id="plus"]
+[ext_resource type="Texture2D" path="../icons/galgame/fit.svg" id="fit"]
+[ext_resource type="Texture2D" path="../icons/galgame/locate.svg" id="locate"]
+[ext_resource type="Texture2D" path="../icons/galgame/restart.svg" id="restart"]
+[ext_resource type="Texture2D" path="../icons/galgame/text.svg" id="text"]
+[ext_resource type="Texture2D" path="../icons/galgame/reading.svg" id="reading"]
+[ext_resource type="Texture2D" path="../icons/galgame/display.svg" id="display"]
+[ext_resource type="Texture2D" path="../icons/galgame/system.svg" id="system"]
+
+[resource]
+metadata/icons = {
+"cherry": ExtResource("cherry"),
+"history": ExtResource("history"),
+"play": ExtResource("play"),
+"pause": ExtResource("pause"),
+"save": ExtResource("save"),
+"load": ExtResource("load"),
+"eye": ExtResource("eye"),
+"flow": ExtResource("flow"),
+"fast-forward": ExtResource("fast-forward"),
+"settings": ExtResource("settings"),
+"back": ExtResource("back"),
+"close": ExtResource("close"),
+"chevron-right": ExtResource("chevron-right"),
+"chevron-down": ExtResource("chevron-down"),
+"voice": ExtResource("voice"),
+"volume": ExtResource("volume"),
+"bookmark": ExtResource("bookmark"),
+"bookmark-filled": ExtResource("bookmark-filled"),
+"read": ExtResource("read"),
+"check": ExtResource("check"),
+"locked": ExtResource("locked"),
+"unread": ExtResource("unread"),
+"current": ExtResource("current"),
+"minus": ExtResource("minus"),
+"plus": ExtResource("plus"),
+"fit": ExtResource("fit"),
+"locate": ExtResource("locate"),
+"restart": ExtResource("restart"),
+"text": ExtResource("text"),
+"reading": ExtResource("reading"),
+"display": ExtResource("display"),
+"system": ExtResource("system")
+}

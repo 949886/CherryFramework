@@ -5,6 +5,7 @@ extends VBoxContainer
 
 const CARD := Vector2(202, 112)
 const PITCH := Vector2(262, 158)
+const STATUS_LABELS := {"current": "当前", "read": "已读", "unread": "未读", "locked": "未解锁"}
 var presenter: StoryGalgamePresenter
 var menus: StoryGalgameMenus
 var skin: StorySkin
@@ -40,10 +41,11 @@ func configure(host: StoryGalgamePresenter, owner_menus: StoryGalgameMenus) -> v
 	for title in chapters: chapter.add_item(title)
 	chapter.item_selected.connect(func(_index): _filter())
 	toolbar.add_child(chapter)
-	var marked := skin.button("☆ 书签", func():
+	var marked := skin.button("书签", func():
 		only_marks = not only_marks
-		_filter())
+		_filter(), Vector2.ZERO, "bookmark")
 	marked.toggle_mode = true
+	marked.toggled.connect(func(active): marked.icon = skin.icon("bookmark-filled" if active else "bookmark"))
 	toolbar.add_child(marked)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -71,19 +73,26 @@ func configure(host: StoryGalgamePresenter, owner_menus: StoryGalgameMenus) -> v
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 10)
 	add_child(footer)
-	footer.add_child(skin.button("−", func(): canvas.zoom_at(canvas.size / 2, canvas.zoom / 1.2), Vector2(38, 34)))
+	var zoom_out := skin.button("", func(): canvas.zoom_at(canvas.size / 2, canvas.zoom / 1.2), Vector2(42, 34), "minus")
+	zoom_out.tooltip_text = "缩小画布"
+	footer.add_child(zoom_out)
 	zoom_label = skin.label("100%", 14, "muted")
 	footer.add_child(zoom_label)
-	footer.add_child(skin.button("＋", func(): canvas.zoom_at(canvas.size / 2, canvas.zoom * 1.2), Vector2(38, 34)))
-	footer.add_child(skin.button("适应画布", fit_graph))
-	footer.add_child(skin.button("定位当前", _locate_current))
-	footer.add_child(skin.label("拖动画布 · 滚轮缩放    ● 当前   ✓ 已读   ○ 未读   ◇ 未解锁", 13, "muted"))
+	var zoom_in := skin.button("", func(): canvas.zoom_at(canvas.size / 2, canvas.zoom * 1.2), Vector2(42, 34), "plus")
+	zoom_in.tooltip_text = "放大画布"
+	footer.add_child(zoom_in)
+	footer.add_child(skin.button("适应画布", fit_graph, Vector2.ZERO, "fit"))
+	footer.add_child(skin.button("定位当前", _locate_current, Vector2.ZERO, "locate"))
+	footer.add_child(skin.label("拖动画布 · 滚轮缩放", 13, "muted"))
+	for state in STATUS_LABELS:
+		footer.add_child(skin.icon_label(state, STATUS_LABELS[state], 13, "muted"))
 	for identity in host.library.nodes:
 		var node: Dictionary = host.library.nodes[identity]
 		positions[identity] = Vector2(node.column, node.row) * PITCH + Vector2(34, 34)
 		var button := skin.button("", func(): _select(identity))
 		button.size = CARD
 		button.clip_contents = true
+		button.clip_text = true
 		canvas.add_child(button)
 		cards[identity] = button
 	minimap = MiniMap.new()
@@ -106,8 +115,15 @@ func _refresh() -> void:
 		var node: Dictionary = presenter.library.nodes[identity]
 		var button: Button = cards[identity]
 		var unlocked := state != "locked"
-		var symbol: String = {"current": "●", "read": "✓", "unread": "○", "locked": "◇"}[state]
-		button.text = "%s  %s%s\n\n%s" % [symbol, node.title if unlocked else "尚未解锁", "  ☆" if presenter.archive.bookmarks.has(identity) else "", node.source.get_file() if unlocked else "继续故事，发现新的可能"]
+		button.icon = skin.icon(state)
+		button.text = "%s\n\n%s" % [node.title if unlocked else "尚未解锁", node.source.get_file() if unlocked else "继续故事，发现新的可能"]
+		var mark := button.get_node_or_null("Bookmark") as TextureRect
+		if mark == null:
+			mark = skin.icon_view("bookmark-filled", 12, "accent")
+			mark.name = "Bookmark"
+			mark.position = Vector2(CARD.x - 22, 8)
+			button.add_child(mark)
+		mark.visible = presenter.archive.bookmarks.has(identity)
 		button.add_theme_font_size_override("font_size", 14)
 		button.add_theme_stylebox_override("normal", StorySkin.box(skin.colors.soft if state == "current" else skin.colors.paper, skin.colors.accent if identity == selected else skin.colors.line, 12, 14))
 		if presenter.archive.progress.has(identity): visited += 1
@@ -131,7 +147,7 @@ func _select(identity: String) -> void:
 	var node: Dictionary = presenter.library.nodes[identity]
 	var state := status(identity)
 	if state == "locked":
-		details.add_child(skin.label("◇ 尚未解锁", 22))
+		details.add_child(skin.icon_label("locked", "尚未解锁", 22))
 		details.add_child(_wrapped("沿着故事继续前进，新的片段会在这里慢慢展开。", 16))
 	else:
 		details.add_child(skin.label(node.chapter, 13, "accent"))
@@ -159,13 +175,13 @@ func _select(identity: String) -> void:
 		bar.custom_minimum_size.y = 8
 		bar.show_percentage = false
 		details.add_child(bar)
-		details.add_child(skin.button("★ 移除书签" if presenter.archive.bookmarks.has(identity) else "☆ 添加书签", func():
+		details.add_child(skin.button("移除书签" if presenter.archive.bookmarks.has(identity) else "添加书签", func():
 			presenter.archive.toggle_bookmark(identity)
 			_select(identity)
-			_filter()))
+			_filter(), Vector2.ZERO, "bookmark-filled" if presenter.archive.bookmarks.has(identity) else "bookmark"))
 		var replay := skin.button("从这份剧本重新阅读", func():
 			menus.confirm("回到这份剧本？", "将回到首次进入该文件时的状态。当前未保存的进度将丢失。", func():
-				if presenter.archive.replay_file(identity) == OK: presenter.close_menu()))
+				if presenter.archive.replay_file(identity) == OK: presenter.close_menu()), Vector2.ZERO, "restart")
 		replay.disabled = not presenter.archive.progress.has(identity)
 		details.add_child(replay)
 		for direction in ["from", "to"]:
@@ -176,9 +192,9 @@ func _select(identity: String) -> void:
 				var peer: String = edge.to if direction == "from" else edge.from
 				var peer_node: Dictionary = presenter.library.nodes.get(peer, {})
 				if peer_node.is_empty(): continue
-				peers.add_child(skin.button("◇ 尚未解锁" if status(peer) == "locked" else peer_node.title, func():
+				peers.add_child(skin.button("尚未解锁" if status(peer) == "locked" else peer_node.title, func():
 					_select(peer)
-					canvas.center_on(peer)))
+					canvas.center_on(peer), Vector2.ZERO, "locked" if status(peer) == "locked" else "chevron-right"))
 			if peers.get_child_count() > 1: details.add_child(peers)
 			else: peers.free()
 	_refresh()

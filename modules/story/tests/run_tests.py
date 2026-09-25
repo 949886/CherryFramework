@@ -65,13 +65,23 @@ def main():
     module_path = 'features/narrative'
     relocated = project / module_path
     shutil.copytree(module, relocated, ignore=shutil.ignore_patterns('*.import', '__pycache__'))
+    # Preserve importer choices and quality settings while rebuilding all cache
+    # paths/UIDs in the relocated project. Dropping these options silently turns
+    # DPITexture SVGs back into small, fixed-resolution Texture2D bitmaps.
+    for original in module.rglob('*.import'):
+        content = original.read_text(encoding='utf-8')
+        importer = re.search(r'^importer="[^"]+"', content, re.M)
+        if importer and '[params]' in content:
+            target = relocated / original.relative_to(module)
+            target.write_text('[remap]\n' + importer.group(0) + '\n\n[params]' +
+                              content.split('[params]', 1)[1], encoding='utf-8')
     shutil.copytree(module.parents[1] / 'core', project / 'shared/cherry_core')
     for file in relocated.rglob('*'):
         if file.suffix in ('.tscn', '.tres'):
             content = file.read_text(encoding='utf-8').replace(
                 'res://addons/cherry/modules/story/', f'res://{module_path}/')
-            # This fixture intentionally drops .import files and reimports all
-            # assets. Editor-saved ext_resource UID hints therefore refer to the
+            # This fixture intentionally drops import cache paths/UIDs and
+            # reimports assets. Editor-saved ext_resource UID hints refer to the
             # source project, not these freshly generated imports. Resolve the
             # relocated references by path; preserve resource header/.uid IDs.
             content = re.sub(r'(\[ext_resource[^\n]*?) uid="uid://[^"]+"', r'\1', content)
