@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="SlideFadeNavigationTransition" format=3]
+
+[ext_resource type="Script" path="../../ui/navigation/gdscript/slide_fade_navigation_transition.gd" id="script"]
+
+[resource]
+script = ExtResource("script")
+duration = 0.18
+distance_ratio = 0.025

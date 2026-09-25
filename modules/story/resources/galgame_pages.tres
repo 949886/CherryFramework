@@ -1,0 +1,63 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="../../ui/navigation/gdscript/page_definition.gd" id="definition"]
+[ext_resource type="PackedScene" path="../scenes/galgame/gameplay.tscn" id="gameplay"]
+[ext_resource type="PackedScene" path="../scenes/galgame/settings.tscn" id="settings"]
+[ext_resource type="PackedScene" path="../scenes/galgame/save.tscn" id="save"]
+[ext_resource type="PackedScene" path="../scenes/galgame/load.tscn" id="load"]
+[ext_resource type="PackedScene" path="../scenes/galgame/backlog.tscn" id="backlog"]
+[ext_resource type="PackedScene" path="../scenes/galgame/flow.tscn" id="flow"]
+[ext_resource type="PackedScene" path="../scenes/galgame/ending.tscn" id="ending"]
+[ext_resource type="PackedScene" path="../scenes/galgame/confirm.tscn" id="confirm"]
+
+[sub_resource type="Resource" id="page_gameplay"]
+script = ExtResource("definition")
+path = "ui://cherry/story/gameplay"
+scene = ExtResource("gameplay")
+
+[sub_resource type="Resource" id="page_settings"]
+script = ExtResource("definition")
+path = "ui://cherry/story/settings"
+scene = ExtResource("settings")
+
+[sub_resource type="Resource" id="page_save"]
+script = ExtResource("definition")
+path = "ui://cherry/story/save"
+scene = ExtResource("save")
+
+[sub_resource type="Resource" id="page_load"]
+script = ExtResource("definition")
+path = "ui://cherry/story/load"
+scene = ExtResource("load")
+
+[sub_resource type="Resource" id="page_backlog"]
+script = ExtResource("definition")
+path = "ui://cherry/story/backlog"
+scene = ExtResource("backlog")
+
+[sub_resource type="Resource" id="page_flow"]
+script = ExtResource("definition")
+path = "ui://cherry/story/flow"
+scene = ExtResource("flow")
+
+[sub_resource type="Resource" id="page_ending"]
+script = ExtResource("definition")
+path = "ui://cherry/story/ending"
+scene = ExtResource("ending")
+
+[sub_resource type="Resource" id="page_confirm"]
+script = ExtResource("definition")
+path = "ui://cherry/story/confirm"
+scene = ExtResource("confirm")
+
+[resource]
+metadata/pages = {
+"gameplay": SubResource("page_gameplay"),
+"settings": SubResource("page_settings"),
+"save": SubResource("page_save"),
+"load": SubResource("page_load"),
+"backlog": SubResource("page_backlog"),
+"flow": SubResource("page_flow"),
+"ending": SubResource("page_ending"),
+"confirm": SubResource("page_confirm")
+}

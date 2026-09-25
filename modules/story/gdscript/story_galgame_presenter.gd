@@ -352,14 +352,14 @@ func toggle_hidden() -> void:
 
 func open_menu(page: String) -> void:
 	if ui_hidden: toggle_hidden()
-	_capture_thumbnail()
+	if not menu.is_open: _capture_thumbnail()
 	paused = true
 	menu.open(page)
 
 func close_menu() -> void:
 	menu.close()
 	replay_player.stop()
-	paused = _focus_paused
+	paused = menu.is_open or _focus_paused
 
 func _capture_thumbnail() -> void:
 	if DisplayServer.get_name() == "headless": return
@@ -385,19 +385,19 @@ func _lose_focus() -> void:
 func _gain_focus() -> void:
 	if _focus_paused:
 		_focus_paused = false
-		paused = menu.visible or ui_hidden
+		paused = menu.is_open or ui_hidden
 
 func _input(event: InputEvent) -> void:
 	if not _initialized: return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
 			if menu.dismiss_confirmation(): pass
-			elif menu.visible: close_menu()
+			elif menu.is_open: menu.back()
 			elif ui_hidden: toggle_hidden()
 			else: open_menu("settings")
 			get_viewport().set_input_as_handled()
 			return
-		if preferences.values.keyboard and not menu.visible and not ui_hidden:
+		if preferences.values.keyboard and not menu.is_open and not ui_hidden:
 			var shortcuts := {KEY_A: toggle_auto, KEY_S: func(): open_menu("save"), KEY_L: func(): open_menu("load"), KEY_H: toggle_hidden, KEY_B: func(): open_menu("backlog"), KEY_M: func(): open_menu("flow"), KEY_CTRL: toggle_skip}
 			if shortcuts.has(event.keycode):
 				shortcuts[event.keycode].call()
@@ -407,7 +407,7 @@ func _input(event: InputEvent) -> void:
 		toggle_hidden()
 		get_viewport().set_input_as_handled()
 		return
-	if menu.visible or ui_hidden: return
+	if menu.is_open or ui_hidden: return
 	if event is InputEventKey and not preferences.values.keyboard: return
 	super._input(event)
 

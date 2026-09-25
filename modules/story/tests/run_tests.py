@@ -75,7 +75,11 @@ def main():
             target = relocated / original.relative_to(module)
             target.write_text('[remap]\n' + importer.group(0) + '\n\n[params]' +
                               content.split('[params]', 1)[1], encoding='utf-8')
-    shutil.copytree(module.parents[1] / 'core', project / 'shared/cherry_core')
+    shutil.copytree(module.parents[1] / 'core', project / 'core')
+    # The native Galgame scene uses Cherry Navigation's GDScript runtime. Keep
+    # its relative module position so selected-scene dependency paths relocate.
+    shutil.copytree(module.parent / 'ui/navigation/gdscript', project / 'features/ui/navigation/gdscript',
+                    ignore=shutil.ignore_patterns('.gdignore'))
     for file in relocated.rglob('*'):
         if file.suffix in ('.tscn', '.tres'):
             content = file.read_text(encoding='utf-8').replace(

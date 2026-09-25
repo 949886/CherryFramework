@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="menu_page.tscn" id="base"]
+
+[node name="Save" instance=ExtResource("base")]
+navigation_path = "ui://cherry/story/save"
+page = "save"
+title = "存档"

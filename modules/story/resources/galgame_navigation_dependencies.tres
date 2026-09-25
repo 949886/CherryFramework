@@ -1,0 +1,18 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="../../ui/navigation/gdscript/navigator.gd" id="navigator"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/navigation_page.gd" id="navigation_page"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/navigation_route.gd" id="navigation_route"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/navigation_dialog.gd" id="navigation_dialog"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/navigation_transition.gd" id="navigation_transition"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/page_definition.gd" id="page_definition"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/page_registry.gd" id="page_registry"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/pop_scope.gd" id="pop_scope"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/default_dialog.gd" id="default_dialog"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/tween_navigation_transition.gd" id="tween_navigation_transition"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/slide_navigation_transition.gd" id="slide_navigation_transition"]
+[ext_resource type="Script" path="../../ui/navigation/gdscript/slide_fade_navigation_transition.gd" id="slide_fade_navigation_transition"]
+[ext_resource type="Script" path="../../../core/uri.gd" id="uri"]
+
+[resource]
+metadata/scripts = [ExtResource("navigator"), ExtResource("navigation_page"), ExtResource("navigation_route"), ExtResource("navigation_dialog"), ExtResource("navigation_transition"), ExtResource("page_definition"), ExtResource("page_registry"), ExtResource("pop_scope"), ExtResource("default_dialog"), ExtResource("tween_navigation_transition"), ExtResource("slide_navigation_transition"), ExtResource("slide_fade_navigation_transition"), ExtResource("uri")]

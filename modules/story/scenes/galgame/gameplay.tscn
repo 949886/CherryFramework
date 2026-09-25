@@ -1,0 +1,15 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="../../../ui/navigation/gdscript/navigation_page.gd" id="script"]
+
+[node name="Gameplay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("script")
+navigation_path = "ui://cherry/story/gameplay"
+covered_behavior = 1
+mouse_filter = 2

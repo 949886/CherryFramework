@@ -75,8 +75,18 @@ func _run() -> void:
 		await get_tree().process_frame
 	check(native.choices_panel.get_child_count() == 3, "exported galgame reaches choice")
 	native.open_menu("settings")
-	check(native.menu.preview != null, "exported shared preview opens")
+	check(native.menu.active_page.preview != null, "exported shared preview opens")
+	check(native.menu.navigator.current_route.page is StoryMenuPage and native.menu.navigator.route_count == 2, "exported menu uses Cherry navigation")
+	var settings_page := native.menu.active_page
+	settings_page.select_section("display")
+	settings_page.select_section("text")
+	check(native.menu.active_page == settings_page, "exported tabs keep their page instance")
+	native.menu.confirm("确认", "测试导出导航", func(): pass)
+	check(native.menu.confirmation is NavigationDialog, "export includes native modal page")
+	native.menu.back()
+	check(native.menu.active_page == settings_page and settings_page.route.state == NavigationRoute.State.ACTIVE, "exported modal back restores menu route")
 	native.close_menu()
+	check(native.menu.navigator.route_count == 1, "exported menu pop returns to gameplay root")
 	native.archive.player.stop()
 	galgame.queue_free()
 	# Menu preview layout and resource releases are deferred by Controls. Drain

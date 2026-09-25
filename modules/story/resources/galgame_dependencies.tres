@@ -9,7 +9,11 @@
 [ext_resource type="Script" path="../gdscript/story_choice_button.gd" id="8"]
 [ext_resource type="Shader" path="dialogue_glass.gdshader" id="glass"]
 [ext_resource type="Resource" path="galgame_icons.tres" id="icons"]
+[ext_resource type="Resource" path="galgame_pages.tres" id="pages"]
+[ext_resource type="Resource" path="galgame_navigation_dependencies.tres" id="navigator"]
 [resource]
 metadata/scripts = [ExtResource("1"), ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8")]
 metadata/glass_shader = ExtResource("glass")
 metadata/icons = ExtResource("icons")
+metadata/pages = ExtResource("pages")
+metadata/navigator = ExtResource("navigator")
