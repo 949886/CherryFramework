@@ -32,6 +32,9 @@ var _initialized := false
 var _line_read := false
 var _focus_paused := false
 var _hidden_state: Array[bool] = []
+var _choice_pending := -1
+var _choice_token := -1
+var _choice_remaining := 0.0
 
 func _ready() -> void:
 	preferences.path = save_directory.path_join("settings.cfg")
@@ -192,6 +195,7 @@ func _layout_dialogue() -> void:
 	choice_scroll.visible = choices_panel.visible and not ui_hidden
 
 func _begin(mode: String, payload: Dictionary) -> int:
+	_choice_pending = -1
 	if mode in ["dialogue", "narration"] and not preferences.values.keep_voice and _pending_state == null:
 		audio_player.stop()
 	var token := super._begin(mode, payload)
@@ -220,26 +224,66 @@ func _finish() -> void:
 	super._finish()
 
 func _build_choices(payload: Dictionary) -> void:
-	super._build_choices(payload)
-	for index in choices_panel.get_child_count():
-		var button := choices_panel.get_child(index) as Button
-		button.text = "%02d    %s    ›" % [index + 1, button.text]
+	for child in choices_panel.get_children():
+		choices_panel.remove_child(child)
+		child.queue_free()
+	var options: Array = payload.get("options", [])
+	for index in options.size():
+		var button := StoryChoiceButton.new()
+		button.configure(skin)
+		button.text = "%02d    %s    ›" % [index + 1, String(options[index].get("text", ""))]
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.custom_minimum_size = Vector2(0, 60)
 		button.add_theme_font_size_override("font_size", 18)
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		button.pressed.connect(_choose.bind(index, _cancel_token))
+		choices_panel.add_child(button)
 
 func _choose(index: int, token: int) -> void:
-	if token != _cancel_token or not _active or paused: return
+	if token != _cancel_token or not _active or paused or _state.mode != "choice" or _choice_pending >= 0: return
 	var options: Array = _state.payload.get("options", [])
 	if index < 0 or index >= options.size(): return
-	archive.record_choice(String(options[index].get("text", "")))
+	_choice_pending = index
+	_choice_token = token
+	_choice_remaining = 0.0 if preferences.values.motion == "reduced" else float(preferences.schema.choice_motion.commit_duration)
+	for item in choices_panel.get_child_count():
+		(choices_panel.get_child(item) as StoryChoiceButton).confirm_choice(item == index)
 	if effect_stream != null: effect_player.play()
-	super._choose(index, token)
+	if _choice_remaining <= 0.0: _commit_choice()
+
+func _commit_choice() -> void:
+	var index := _choice_pending
+	_choice_pending = -1
+	if _choice_token != _cancel_token or not _active or _state.mode != "choice" or index < 0: return
+	archive.record_choice(String(_state.payload.options[index].get("text", "")))
 	choice_scroll.hide()
+	super._choose(index, _choice_token)
+
+func cancel_current() -> void:
+	_choice_pending = -1
+	super.cancel_current()
+
+func _advance_choices(delta: float) -> void:
+	if paused or delta < 0.0 or not _active or _state.mode != "choice": return
+	# Mouse hover takes precedence over retained keyboard focus, so moving
+	# between options cannot leave two different rows highlighted.
+	var highlighted := -1
+	for index in choices_panel.get_child_count():
+		if (choices_panel.get_child(index) as Button).has_focus(): highlighted = index
+	for index in choices_panel.get_child_count():
+		if (choices_panel.get_child(index) as Button).is_hovered(): highlighted = index
+	for index in choices_panel.get_child_count():
+		var button := choices_panel.get_child(index) as StoryChoiceButton
+		button.set_interaction(index == highlighted, button.is_pressed())
+		button.advance_visuals(delta)
+	if _choice_pending >= 0:
+		_choice_remaining -= delta
+		if _choice_remaining <= 0.0: _commit_choice()
 
 func advance_time(delta: float) -> void:
 	if not _initialized: return
+	_advance_choices(delta)
 	# Keep typewriter and command timing intact; only suspend automatic advance
 	# at a finished line while speech is playing. A deliberate click still wins.
 	var hold_auto: bool = auto_play and preferences.values.wait_voice and audio_player.playing and _state.phase == "end" and not _advance_pressed
@@ -259,6 +303,9 @@ func _settings_changed(key: String) -> void:
 	skin.refresh_labels(stage)
 	dialogue.apply_skin(skin)
 	narration.apply_skin(skin)
+	for button in choices_panel.get_children():
+		(button as StoryChoiceButton).configure(skin)
+	if preferences.values.motion == "reduced": _choice_remaining = 0.0
 	character_delay = 0.0 if preferences.values.instant else 1.0 / float(preferences.values.speed)
 	auto_advance_delay = float(preferences.values.auto_delay)
 	fast_forward_multiplier = float(preferences.values.skip_speed)

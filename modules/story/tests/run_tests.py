@@ -68,8 +68,14 @@ def main():
     shutil.copytree(module.parents[1] / 'core', project / 'shared/cherry_core')
     for file in relocated.rglob('*'):
         if file.suffix in ('.tscn', '.tres'):
-            file.write_text(file.read_text(encoding='utf-8').replace(
-                'res://addons/cherry/modules/story/', f'res://{module_path}/'), encoding='utf-8')
+            content = file.read_text(encoding='utf-8').replace(
+                'res://addons/cherry/modules/story/', f'res://{module_path}/')
+            # This fixture intentionally drops .import files and reimports all
+            # assets. Editor-saved ext_resource UID hints therefore refer to the
+            # source project, not these freshly generated imports. Resolve the
+            # relocated references by path; preserve resource header/.uid IDs.
+            content = re.sub(r'(\[ext_resource[^\n]*?) uid="uid://[^"]+"', r'\1', content)
+            file.write_text(content, encoding='utf-8')
     config = project / 'project.godot'
     config.write_text('''config_version=5
 [application]

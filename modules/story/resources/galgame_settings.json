@@ -2,6 +2,7 @@
   "version": 1,
   "slot_count": 24,
   "slots_per_page": 6,
+  "choice_motion": {"enter_duration":0.18,"hover_duration":0.14,"press_duration":0.08,"commit_duration":0.14,"content_shift":4,"muted_alpha":0.55},
   "palettes": {
     "peach": {"label":"蜜桃苏打","paper":"#fff9f8","ink":"#65535d","muted":"#8c747e","accent":"#b75677","line":"#efdee3","soft":"#fae9ee","name":"#f5d7e1","name_ink":"#974965"},
     "mint": {"label":"薄荷晴空","paper":"#f8fcfa","ink":"#36564d","muted":"#658477","accent":"#438a78","line":"#d7e8de","soft":"#e7f4ec","name":"#d4eadf","name_ink":"#376b58"},

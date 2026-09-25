@@ -6,7 +6,8 @@
 [ext_resource type="Script" path="../gdscript/story_dialogue_box.gd" id="5"]
 [ext_resource type="Script" path="../gdscript/story_galgame_menus.gd" id="6"]
 [ext_resource type="Script" path="../gdscript/story_flow_view.gd" id="7"]
+[ext_resource type="Script" path="../gdscript/story_choice_button.gd" id="8"]
 [ext_resource type="Shader" path="dialogue_glass.gdshader" id="glass"]
 [resource]
-metadata/scripts = [ExtResource("1"), ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7")]
+metadata/scripts = [ExtResource("1"), ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8")]
 metadata/glass_shader = ExtResource("glass")
