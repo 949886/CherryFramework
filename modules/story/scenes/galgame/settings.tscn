@@ -183,6 +183,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/FontSize"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -238,6 +239,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/LineHeight"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -268,6 +270,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Text/Content/LetterSpacing"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -398,6 +401,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/Speed"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -446,6 +450,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/AutoDelay"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -512,6 +517,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Reading/Content/SkipSpeed"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -587,6 +593,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Master"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -617,6 +624,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Music"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -647,6 +655,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Voice"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -677,6 +686,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Sound/Content/Effects"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -834,6 +844,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/Opacity"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -975,6 +986,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassBlur"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -1005,6 +1017,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassTint"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3
@@ -1035,6 +1048,7 @@ theme_override_font_sizes/font_size = 16
 custom_minimum_size = Vector2(215, 0)
 
 [node name="Value" type="HSlider" parent="Sheet/Margin/Layout/Body/Split/Pages/Display/Content/GlassSaturation"]
+scrollable = false
 layout_mode = 2
 metadata/setting_control = true
 size_flags_horizontal = 3

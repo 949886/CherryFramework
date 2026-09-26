@@ -85,6 +85,7 @@ func _run() -> void:
 	check(presenter.menu.active_page.heading.text == "设置", "settings title")
 	check(presenter.menu.active_page.preview.text.text == presenter.dialogue.text.text, "settings preview uses actual dialogue")
 	check(presenter.menu.active_page.preview.text.get_theme_font("normal_font") == presenter.dialogue.text.get_theme_font("normal_font"), "shared body font resource")
+	await _check_settings_wheel_input()
 	presenter.preferences.set_value("font_size", 36)
 	presenter.preferences.set_value("line_height", 2.2)
 	await settle()
@@ -254,3 +255,45 @@ func _check_scrollbar_palette() -> void:
 	scroll.scroll_vertical = 80
 	check(scroll.scroll_vertical > 0, "themed settings scrollbar still scrolls overflowing content")
 	scroll.scroll_vertical = previous
+
+func _check_settings_wheel_input() -> void:
+	var page := presenter.menu.active_page
+	var scroll := page.settings_tabs.get_current_tab_control() as ScrollContainer
+	var slider: HSlider = page._controls.font_size
+	var before := presenter.preferences.values.duplicate(true)
+	var body_height := presenter.dialogue.text.get_content_height()
+	var preview_height := page.preview.text.get_content_height()
+	var position := slider.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new()
+	motion.position = position
+	motion.global_position = position
+	root.push_input(motion, true)
+	# Reproduce ordinary page scrolling with the pointer over the font slider.
+	# This previously changed 23px to 16px and persisted it without a drag.
+	for tick in range(7):
+		var wheel := InputEventMouseButton.new()
+		wheel.position = position
+		wheel.global_position = position
+		wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
+		wheel.pressed = true
+		root.push_input(wheel, true)
+	await settle()
+	check(presenter.preferences.values == before, "scrolling over settings sliders cannot change or persist preferences")
+	check(scroll.scroll_vertical > 0, "wheel over a slider scrolls its parent page")
+	check(presenter.dialogue.text.get_content_height() == body_height and page.preview.text.get_content_height() == preview_height, "scrolling preserves actual dialogue and preview glyph metrics")
+	var saved := ConfigFile.new()
+	check(saved.load(presenter.preferences.path) == OK and saved.get_value("settings", "font_size") == before.font_size, "scrolling preserves saved dialogue size")
+	scroll.scroll_vertical = 0
+	await settle()
+	slider.grab_focus()
+	var key := InputEventKey.new()
+	key.keycode = KEY_RIGHT
+	key.pressed = true
+	root.push_input(key, true)
+	key = key.duplicate()
+	key.pressed = false
+	root.push_input(key, true)
+	await settle()
+	check(slider.value == float(before.font_size) + slider.step and presenter.preferences.values.font_size == slider.value, "keyboard arrows still intentionally adjust font size")
+	presenter.preferences.set_value("font_size", before.font_size)
+	await settle()
