@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="StoryFlowStroke" format=3]
+
+[ext_resource type="Script" path="../gdscript/story_flow_stroke.gd" id="script"]
+
+[resource]
+script = ExtResource("script")
+width = 1.5
+traveled_width = 2.0
+selected_width = 2.5
+opacity = 0.38
+traveled_opacity = 0.7
+dash_length = 5.0
+gap_length = 5.0
+curve_step = 2.0
+minimum_dash_pixels = 2.0
+outline_width = 1.0
+outline_dash = 3.0
+outline_gap = 3.0

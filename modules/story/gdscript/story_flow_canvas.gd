@@ -7,6 +7,7 @@ extends Control
 @export var max_zoom := 1.75
 @export var grid_spacing := 22.0
 @export var drag_threshold := 5.0
+@export var stroke: StoryFlowStroke
 @onready var world: Control = $World
 var view: Control
 var pan := Vector2.ZERO
@@ -20,6 +21,7 @@ var _old_size := Vector2.ZERO
 
 func _ready() -> void:
 	resized.connect(_resize)
+	get_viewport().size_changed.connect(queue_redraw)
 
 func _resize() -> void:
 	if view == null: return
@@ -109,18 +111,13 @@ func _draw() -> void:
 		var selected_edge: bool = edge.from == view.selected or edge.to == view.selected
 		var traveled: bool = view.presenter.archive.progress.has(edge.from) and view.presenter.archive.progress.has(edge.to)
 		var color: Color = colors.accent if selected_edge or traveled else colors.muted
-		color.a = 1.0 if selected_edge else (0.7 if traveled else 0.38)
-		var width := 2.5 if selected_edge else (2.0 if traveled else 1.5)
-		if view.status(edge.to) == "locked":
-			for i in range(points.size() - 1):
-				if i % 4 < 2: draw_line(points[i], points[i + 1], color, width, true)
-		else: draw_polyline(points, color, width, true)
+		color.a = 1.0 if selected_edge else (stroke.traveled_opacity if traveled else stroke.opacity)
+		var width := stroke.selected_width if selected_edge else (stroke.traveled_width if traveled else stroke.width)
+		var locked: bool = view.status(edge.to) == "locked"
+		stroke.draw_path(self, points, color, width, stroke.dash_length if locked else 0.0, stroke.gap_length if locked else 0.0)
 
 func edge_points(edge: Dictionary) -> PackedVector2Array:
 	var start: Vector2 = pan + (view.positions[edge.from] + Vector2(view.card_size.x, view.card_size.y / 2.0)) * zoom
 	var end: Vector2 = pan + (view.positions[edge.to] + Vector2(0, view.card_size.y / 2.0)) * zoom
 	var bend := maxf(absf(end.x - start.x) * 0.5, 48.0 * zoom)
-	var points := PackedVector2Array()
-	for step in range(49):
-		points.append(start.bezier_interpolate(start + Vector2(bend, 0), end - Vector2(bend, 0), end, float(step) / 48.0))
-	return points
+	return stroke.bezier(start, end, bend, StoryFlowStroke.pixel_transform(self).x.length())

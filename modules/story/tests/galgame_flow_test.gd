@@ -50,6 +50,7 @@ func capture(name: String) -> void:
 		root.get_texture().get_image().save_png("user://flow-" + name + ".png")
 
 func _run() -> void:
+	_check_strokes()
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
@@ -84,6 +85,20 @@ func _run() -> void:
 		if edge.from == current: labels.append(edge.label)
 	check(labels == ["先吃饭", "去洗澡", "当然选真寻酱"], "branch captions come from compiled choices")
 	await capture("overview")
+	if "--render" in OS.get_cmdline_user_args():
+		# Capture real GPU output across graph zoom and viewport stretch. These
+		# are screenshots, not assertions on implementation-generated bitmaps.
+		for dimensions in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
+			root.size = dimensions
+			await settle()
+			for zoom in [0.3, 0.57, 1.0, 1.75]:
+				flow.canvas.zoom_at(flow.canvas.size / 2.0, zoom)
+				flow.canvas.center_on(current)
+				await capture("strokes-%d-%d" % [dimensions.x, roundi(zoom * 100)])
+				if is_equal_approx(zoom, 0.57): _check_rendered_stroke(current, dimensions.x)
+		root.size = Vector2i(1280, 720)
+		await settle()
+		flow.fit_graph()
 	var cards := flow.cards.duplicate()
 	var positions := flow.positions.duplicate()
 	flow.search.text = presenter.library.nodes[current].source.get_file()
@@ -171,3 +186,41 @@ func _run() -> void:
 	await settle()
 	print("Galgame flow: %d passed, %d failed" % [checks - failures, failures])
 	quit(1 if failures else 0)
+
+func _check_strokes() -> void:
+	# Splitting a straight segment at arbitrary vertices must not change dash
+	# length/phase. The old index-based cutting changed both at every bend.
+	var samples := PackedVector2Array([Vector2.ZERO, Vector2(3, 0), Vector2(12, 0), Vector2(20, 0)])
+	var segments := StoryFlowStroke.dashes(samples, 5.0, 5.0)
+	check(segments.size() == 2, "dash count depends on arc length, not tessellation vertices")
+	check(segments[0][0] == Vector2.ZERO and segments[0][-1] == Vector2(5, 0), "first dash crosses a curve vertex without a break")
+	check(segments[1][0] == Vector2(10, 0) and segments[1][-1] == Vector2(15, 0), "dash phase carries across uneven sample spacing")
+	var stroke := StoryFlowStroke.new()
+	var curve := stroke.bezier(Vector2.ZERO, Vector2(170, 210), 85, 1.0)
+	segments = StoryFlowStroke.dashes(curve, 5.0, 5.0)
+	var uniform := true
+	for path in segments.slice(0, -1):
+		var length := 0.0
+		for i in range(1, path.size()): length += path[i - 1].distance_to(path[i])
+		uniform = uniform and absf(length - 5.0) < 0.001
+	check(uniform, "curved dashes retain the approved 5-unit length")
+	var outline := stroke.rounded_outline(Rect2(0, 0, 202, 126), 12)
+	check(outline[0] == outline[-1] and outline.size() > 4, "rounded outline is a continuous closed path")
+
+func _check_rendered_stroke(current: String, viewport_width: int) -> void:
+	# Read the actual GPU pixels on a selected horizontal connector. A line
+	# made solely of translucent AA fringes fails even when its geometry is right.
+	var picture := root.get_texture().get_image()
+	for edge in presenter.library.edges:
+		if edge.from != current or not is_equal_approx(flow.positions[edge.from].y, flow.positions[edge.to].y): continue
+		var points := flow.canvas.edge_points(edge)
+		var transform := StoryFlowStroke.pixel_transform(flow.canvas)
+		var center: Vector2 = transform * ((points[0] + points[-1]) / 2.0)
+		var opaque_rows := 0
+		for offset in range(-5, 6):
+			var sample := picture.get_pixel(roundi(center.x), floori(center.y) + offset)
+			var expected: Color = presenter.skin.colors.accent
+			if absf(sample.r - expected.r) + absf(sample.g - expected.g) + absf(sample.b - expected.b) < 0.015: opaque_rows += 1
+		check(opaque_rows >= 2, "solid connector retains opaque pixel core at viewport width %d" % viewport_width)
+		return
+	check(false, "render fixture contains a selected horizontal connector")

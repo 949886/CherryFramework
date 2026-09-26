@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="../../gdscript/story_flow_canvas.gd" id="canvas"]
 [ext_resource type="Script" path="../../gdscript/story_flow_minimap.gd" id="minimap"]
 [ext_resource type="PackedScene" path="flow_card.tscn" id="card"]
+[ext_resource type="Resource" path="../../resources/galgame_flow_stroke.tres" id="stroke"]
 
 
 [node name="FlowView" type="VBoxContainer"]
@@ -86,6 +87,7 @@ custom_minimum_size = Vector2(600, 300)
 clip_contents = true
 mouse_default_cursor_shape = 6
 script = ExtResource("canvas")
+stroke = ExtResource("stroke")
 
 [node name="World" type="Control" parent="Frame/Split/Canvas"]
 unique_name_in_owner = true

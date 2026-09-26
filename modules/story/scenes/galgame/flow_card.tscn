@@ -2,12 +2,14 @@
 
 [ext_resource type="Script" path="../../gdscript/story_flow_card.gd" id="script"]
 [ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="theme"]
+[ext_resource type="Resource" path="../../resources/galgame_flow_stroke.tres" id="stroke"]
 [ext_resource type="Texture2D" path="../../icons/galgame/bookmark-filled.svg" id="bookmark-filled"]
 [ext_resource type="Texture2D" path="../../icons/galgame/unread.svg" id="unread"]
 
 
 [node name="FlowCard" type="Button"]
 script = ExtResource("script")
+stroke = ExtResource("stroke")
 theme = ExtResource("theme")
 custom_minimum_size = Vector2(202, 126)
 offset_right = 202.0
