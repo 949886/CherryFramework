@@ -85,13 +85,16 @@ func _run() -> void:
 	check(presenter.menu.active_page.heading.text == "设置", "settings title")
 	check(presenter.menu.active_page.preview.text.text == presenter.dialogue.text.text, "settings preview uses actual dialogue")
 	check(presenter.menu.active_page.preview.text.get_theme_font("normal_font") == presenter.dialogue.text.get_theme_font("normal_font"), "shared body font resource")
+	_check_dialogue_font_size(23)
 	await _check_settings_wheel_input()
 	presenter.preferences.set_value("font_size", 36)
 	presenter.preferences.set_value("line_height", 2.2)
 	await settle()
+	_check_dialogue_font_size(36)
 	check(presenter.menu.active_page.preview.size == presenter.dialogue.size, "preview tracks large text panel geometry")
 	presenter.preferences.set_value("font_size", 23)
 	presenter.preferences.set_value("line_height", 1.5)
+	_check_dialogue_font_size(23)
 	_check_scrollbar_palette()
 	await capture("galgame-settings-text")
 	presenter.menu.section_id = "display"
@@ -166,7 +169,7 @@ func _run() -> void:
 	flow.search.text = "不存在的标题"
 	flow._filter()
 	var visible_cards := 0
-	for card in flow.cards.values(): visible_cards += int(card.visible)
+	for card in flow.cards.values(): visible_cards += int(card.is_visible_in_tree())
 	check(visible_cards == 0, "flow search actually filters")
 	presenter.menu.open("backlog")
 	await capture("galgame-backlog")
@@ -255,6 +258,13 @@ func _check_scrollbar_palette() -> void:
 	scroll.scroll_vertical = 80
 	check(scroll.scroll_vertical > 0, "themed settings scrollbar still scrolls overflowing content")
 	scroll.scroll_vertical = previous
+
+func _check_dialogue_font_size(expected: int) -> void:
+	# Assert actual glyph sizes, not only the preference or slider value. Theme
+	# changes must not shrink the body or leave BBCode font variants behind.
+	for role in ["normal_font_size", "bold_font_size", "italics_font_size", "bold_italics_font_size"]:
+		check(presenter.dialogue.text.get_theme_font_size(role) == expected, "actual dialogue font size: " + role)
+		check(presenter.menu.active_page.preview.text.get_theme_font_size(role) == expected, "preview font size: " + role)
 
 func _check_settings_wheel_input() -> void:
 	var page := presenter.menu.active_page

@@ -53,9 +53,7 @@ func build_content() -> void:
 		"slots", "save", "load": _slots()
 		"backlog": _backlog()
 		"flow":
-			var graph := StoryFlowView.new()
-			body.add_child(graph)
-			graph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			var graph: StoryFlowView = body.get_node("FlowView")
 			graph.configure(presenter, menus)
 		"ending": _ending()
 	update_skin()
@@ -80,6 +78,7 @@ func _focus_first(node: Node) -> bool:
 func update_skin() -> void:
 	theme = skin.theme
 	skin.refresh_labels(self)
+	if page == "flow": (body.get_node("FlowView") as StoryFlowView).update_skin()
 
 	for item in _previews.values(): item.apply_skin(skin)
 	for fit in _preview_fits.values(): fit.call_deferred()

@@ -1,0 +1,487 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="../../gdscript/story_flow_view.gd" id="script"]
+[ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="theme"]
+[ext_resource type="Texture2D" path="../../icons/galgame/bookmark.svg" id="bookmark"]
+[ext_resource type="Texture2D" path="../../icons/galgame/current.svg" id="current"]
+[ext_resource type="Texture2D" path="../../icons/galgame/read.svg" id="read"]
+[ext_resource type="Texture2D" path="../../icons/galgame/unread.svg" id="unread"]
+[ext_resource type="Texture2D" path="../../icons/galgame/locked.svg" id="locked"]
+[ext_resource type="Texture2D" path="../../icons/galgame/minus.svg" id="minus"]
+[ext_resource type="Texture2D" path="../../icons/galgame/plus.svg" id="plus"]
+[ext_resource type="Texture2D" path="../../icons/galgame/fit.svg" id="fit"]
+[ext_resource type="Texture2D" path="../../icons/galgame/locate.svg" id="locate"]
+[ext_resource type="Texture2D" path="../../icons/galgame/play.svg" id="play"]
+[ext_resource type="Texture2D" path="../../icons/galgame/close.svg" id="close"]
+[ext_resource type="Script" path="../../gdscript/story_flow_canvas.gd" id="canvas"]
+[ext_resource type="Script" path="../../gdscript/story_flow_minimap.gd" id="minimap"]
+[ext_resource type="PackedScene" path="flow_card.tscn" id="card"]
+
+
+[node name="FlowView" type="VBoxContainer"]
+theme = ExtResource("theme")
+script = ExtResource("script")
+node_scene = ExtResource("card")
+layout_mode = 3
+offset_right = 1172.0
+offset_bottom = 536.0
+theme_override_constants/separation = 14
+
+[node name="Toolbar" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Search" type="LineEdit" parent="Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(270, 42)
+placeholder_text = "搜索剧本名称 / 文件"
+clear_button_enabled = true
+
+[node name="Chapter" type="OptionButton" parent="Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(210, 42)
+fit_to_longest_item = false
+text_overrun_behavior = 3
+item_count = 1
+selected = 0
+popup/item_0/text = "全部章节"
+
+[node name="Bookmarks" type="Button" parent="Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "书签"
+icon = ExtResource("bookmark")
+mouse_default_cursor_shape = 2
+toggle_mode = true
+
+[node name="Spacer" type="Control" parent="Toolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Locate" type="Button" parent="Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "当前位置"
+icon = ExtResource("locate")
+mouse_default_cursor_shape = 2
+
+
+[node name="Frame" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = "StoryFlowFrame"
+
+[node name="Split" type="HBoxContainer" parent="Frame"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Canvas" type="Control" parent="Frame/Split"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(600, 300)
+clip_contents = true
+mouse_default_cursor_shape = 6
+script = ExtResource("canvas")
+
+[node name="World" type="Control" parent="Frame/Split/Canvas"]
+unique_name_in_owner = true
+layout_mode = 0
+mouse_filter = 2
+
+[node name="MapCaption" type="VBoxContainer" parent="Frame/Split/Canvas"]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 14.0
+mouse_filter = 2
+
+[node name="MapTitle" type="Label" parent="Frame/Split/Canvas/MapCaption"]
+layout_mode = 2
+text = "那些尚未发生的故事"
+theme_override_font_sizes/font_size = 16
+
+
+[node name="MapNote" type="Label" parent="Frame/Split/Canvas/MapCaption"]
+layout_mode = 2
+text = "每个节点，一份剧本。"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+
+
+[node name="ZoomPanel" type="PanelContainer" parent="Frame/Split/Canvas"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = -53.0
+offset_right = 244.0
+offset_bottom = -14.0
+theme_type_variation = "StoryFlowZoom"
+
+[node name="Buttons" type="HBoxContainer" parent="Frame/Split/Canvas/ZoomPanel"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ZoomOut" type="Button" parent="Frame/Split/Canvas/ZoomPanel/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+icon = ExtResource("minus")
+mouse_default_cursor_shape = 2
+custom_minimum_size = Vector2(36, 32)
+flat = true
+tooltip_text = "缩小流程图"
+
+[node name="ZoomLabel" type="Label" parent="Frame/Split/Canvas/ZoomPanel/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "100%"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+custom_minimum_size = Vector2(45, 0)
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ZoomIn" type="Button" parent="Frame/Split/Canvas/ZoomPanel/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+icon = ExtResource("plus")
+mouse_default_cursor_shape = 2
+custom_minimum_size = Vector2(36, 32)
+flat = true
+tooltip_text = "放大流程图"
+
+[node name="Fit" type="Button" parent="Frame/Split/Canvas/ZoomPanel/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "总览"
+icon = ExtResource("fit")
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="Minimap" type="Control" parent="Frame/Split/Canvas"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -170.0
+offset_top = -88.0
+offset_right = -14.0
+offset_bottom = -14.0
+mouse_default_cursor_shape = 2
+script = ExtResource("minimap")
+focus_mode = 2
+tooltip_text = "点击或拖动缩略图定位；Enter 定位当前剧本"
+
+[node name="Empty" type="CenterContainer" parent="Frame/Split/Canvas"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Message" type="VBoxContainer" parent="Frame/Split/Canvas/Empty"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="EmptyText" type="Label" parent="Frame/Split/Canvas/Empty/Message"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "没有匹配的剧本"
+theme_override_font_sizes/font_size = 20
+theme_type_variation = "StoryMuted"
+horizontal_alignment = 1
+
+[node name="ClearFilters" type="Button" parent="Frame/Split/Canvas/Empty/Message"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "清除筛选"
+icon = ExtResource("close")
+mouse_default_cursor_shape = 2
+
+
+[node name="DetailPanel" type="PanelContainer" parent="Frame/Split"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 0)
+theme_type_variation = "StoryFlowDetail"
+
+[node name="DetailScroll" type="ScrollContainer" parent="Frame/Split/DetailPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Details" type="VBoxContainer" parent="Frame/Split/DetailPanel/DetailScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="DetailEmpty" type="Label" parent="Frame/Split/DetailPanel/DetailScroll/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "试试其他名称，或清除筛选后浏览所有剧本。"
+theme_override_font_sizes/font_size = 14
+theme_type_variation = "StoryMuted"
+autowrap_mode = 3
+visible = false
+
+[node name="DetailContent" type="VBoxContainer" parent="Frame/Split/DetailPanel/DetailScroll/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Top" type="HBoxContainer" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent"]
+layout_mode = 2
+
+[node name="DetailStatus" type="Label" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent/Top"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "当前阅读"
+theme_override_font_sizes/font_size = 13
+theme_type_variation = "StoryAccent"
+size_flags_horizontal = 3
+
+[node name="Bookmark" type="Button" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent/Top"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+icon = ExtResource("bookmark")
+mouse_default_cursor_shape = 2
+flat = true
+toggle_mode = true
+custom_minimum_size = Vector2(30, 30)
+tooltip_text = "添加剧本书签"
+
+[node name="ScenePreview" type="Control" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 100)
+clip_contents = true
+
+[node name="PreviewBackground" type="TextureRect" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent/ScenePreview"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+expand_mode = 1
+stretch_mode = 6
+mouse_filter = 2
+
+[node name="PreviewPortrait" type="TextureRect" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent/ScenePreview"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 54.0
+offset_top = 4.0
+offset_right = 194.0
+offset_bottom = 284.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="PreviewLock" type="TextureRect" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent/ScenePreview"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -15.0
+offset_top = -15.0
+offset_right = 15.0
+offset_bottom = 15.0
+texture = ExtResource("locked")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+metadata/palette_color = "muted"
+
+[node name="DetailTitle" type="Label" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "选择一份剧本"
+theme_override_font_sizes/font_size = 23
+autowrap_mode = 3
+
+[node name="DetailFile" type="Label" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "剧本文件"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+autowrap_mode = 3
+
+[node name="DetailSummary" type="Label" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "故事的线索，将在这里相连。"
+theme_override_font_sizes/font_size = 14
+theme_type_variation = "StoryMuted"
+autowrap_mode = 3
+
+[node name="ReadingProgress" type="VBoxContainer" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Labels" type="HBoxContainer" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent/ReadingProgress"]
+layout_mode = 2
+
+[node name="Caption" type="Label" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent/ReadingProgress/Labels"]
+layout_mode = 2
+text = "已读内容"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+size_flags_horizontal = 3
+
+[node name="ReadCount" type="Label" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent/ReadingProgress/Labels"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0% · 0/0"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+
+
+[node name="ReadProgress" type="ProgressBar" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent/ReadingProgress"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 6)
+show_percentage = false
+
+[node name="Separator" type="HSeparator" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent"]
+layout_mode = 2
+
+[node name="Connections" type="VBoxContainer" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Replay" type="Button" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "继续阅读"
+icon = ExtResource("play")
+mouse_default_cursor_shape = 2
+custom_minimum_size = Vector2(0, 42)
+theme_type_variation = "StoryFlowPrimary"
+
+[node name="ReplayNote" type="Label" parent="Frame/Split/DetailPanel/DetailScroll/Details/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "回到当前对白"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+autowrap_mode = 3
+horizontal_alignment = 1
+
+[node name="Footer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="current" type="HBoxContainer" parent="Footer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Icon" type="TextureRect" parent="Footer/current"]
+layout_mode = 2
+custom_minimum_size = Vector2(13, 13)
+size_flags_vertical = 4
+texture = ExtResource("current")
+expand_mode = 1
+stretch_mode = 5
+metadata/palette_color = "muted"
+
+[node name="Text" type="Label" parent="Footer/current"]
+layout_mode = 2
+text = "当前"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+
+
+[node name="read" type="HBoxContainer" parent="Footer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Icon" type="TextureRect" parent="Footer/read"]
+layout_mode = 2
+custom_minimum_size = Vector2(13, 13)
+size_flags_vertical = 4
+texture = ExtResource("read")
+expand_mode = 1
+stretch_mode = 5
+metadata/palette_color = "muted"
+
+[node name="Text" type="Label" parent="Footer/read"]
+layout_mode = 2
+text = "已读"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+
+
+[node name="unread" type="HBoxContainer" parent="Footer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Icon" type="TextureRect" parent="Footer/unread"]
+layout_mode = 2
+custom_minimum_size = Vector2(13, 13)
+size_flags_vertical = 4
+texture = ExtResource("unread")
+expand_mode = 1
+stretch_mode = 5
+metadata/palette_color = "muted"
+
+[node name="Text" type="Label" parent="Footer/unread"]
+layout_mode = 2
+text = "未读"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+
+
+[node name="locked" type="HBoxContainer" parent="Footer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Icon" type="TextureRect" parent="Footer/locked"]
+layout_mode = 2
+custom_minimum_size = Vector2(13, 13)
+size_flags_vertical = 4
+texture = ExtResource("locked")
+expand_mode = 1
+stretch_mode = 5
+metadata/palette_color = "muted"
+
+[node name="Text" type="Label" parent="Footer/locked"]
+layout_mode = 2
+text = "未解锁"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+
+
+[node name="ProgressLabel" type="Label" parent="Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "已读 0 / 0 份剧本"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+size_flags_horizontal = 3
+horizontal_alignment = 1
+
+[node name="GestureHint" type="Label" parent="Footer"]
+layout_mode = 2
+text = "拖动画布 · 滚轮缩放"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryMuted"
+

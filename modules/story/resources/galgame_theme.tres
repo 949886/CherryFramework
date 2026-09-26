@@ -975,6 +975,119 @@ corner_detail = 6
 [sub_resource type="SystemFont" id="SystemFont_4g55c"]
 font_names = PackedStringArray("Noto Serif SC", "Source Han Serif SC", "SimSun", "serif")
 
+[sub_resource type="StyleBoxFlat" id="FlowFrame"]
+content_margin_left = 1.0
+content_margin_top = 1.0
+content_margin_right = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(1, 0.9764706, 0.972549, 1)
+border_color = Color(0.9372549, 0.87058824, 0.8901961, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_left = 12
+corner_radius_bottom_right = 12
+
+[sub_resource type="StyleBoxFlat" id="FlowDetail"]
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+bg_color = Color(1, 0.9764706, 0.972549, 1)
+border_color = Color(0.9372549, 0.87058824, 0.8901961, 1)
+corner_radius_top_left = 0
+corner_radius_top_right = 0
+corner_radius_bottom_left = 0
+corner_radius_bottom_right = 0
+border_width_left = 1
+
+[sub_resource type="StyleBoxFlat" id="FlowZoom"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(1, 0.9764706, 0.972549, 1)
+border_color = Color(0.9372549, 0.87058824, 0.8901961, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+
+[sub_resource type="StyleBoxFlat" id="FlowCard"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(1, 0.9764706, 0.972549, 1)
+border_color = Color(0.9372549, 0.87058824, 0.8901961, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_left = 12
+corner_radius_bottom_right = 12
+shadow_color = Color(0.396, 0.325, 0.365, 0.04)
+shadow_size = 4
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="FlowHover"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.98039216, 0.9137255, 0.93333334, 1)
+border_color = Color(0.9372549, 0.87058824, 0.8901961, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_left = 12
+corner_radius_bottom_right = 12
+
+[sub_resource type="StyleBoxFlat" id="FlowFocus"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(1, 0.9764706, 0.972549, 1)
+border_color = Color(0.9372549, 0.87058824, 0.8901961, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_left = 12
+corner_radius_bottom_right = 12
+draw_center = false
+
+[sub_resource type="StyleBoxFlat" id="FlowPrimary"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.9607843, 0.84313726, 0.88235295, 1)
+border_color = Color(0.9372549, 0.87058824, 0.8901961, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+
 [resource]
 default_font = SubResource("SystemFont_4g55c")
 default_font_size = 16
@@ -1276,3 +1389,30 @@ VScrollBar/styles/grabber_highlight = SubResource("StyleBoxFlat_ey5aq")
 VScrollBar/styles/grabber_pressed = SubResource("StyleBoxFlat_livjb")
 VScrollBar/styles/scroll = SubResource("StyleBoxFlat_qwdx5")
 VScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_hldlg")
+
+StoryFlowFrame/base_type = &"PanelContainer"
+StoryFlowFrame/styles/panel = SubResource("FlowFrame")
+
+StoryFlowDetail/base_type = &"PanelContainer"
+StoryFlowDetail/styles/panel = SubResource("FlowDetail")
+
+StoryFlowZoom/base_type = &"PanelContainer"
+StoryFlowZoom/styles/panel = SubResource("FlowZoom")
+
+StoryFlowCard/base_type = &"Button"
+StoryFlowCard/styles/normal = SubResource("FlowCard")
+StoryFlowCard/styles/hover = SubResource("FlowHover")
+StoryFlowCard/styles/pressed = SubResource("FlowHover")
+StoryFlowCard/styles/focus = SubResource("FlowFocus")
+
+StoryFlowPrimary/base_type = &"Button"
+StoryFlowPrimary/styles/normal = SubResource("FlowPrimary")
+StoryFlowPrimary/styles/hover = SubResource("FlowPrimary")
+StoryFlowPrimary/styles/pressed = SubResource("FlowPrimary")
+StoryFlowPrimary/styles/disabled = SubResource("FlowPrimary")
+StoryFlowPrimary/colors/font_color = Color(0.5921569, 0.28627452, 0.39607844, 1)
+
+StoryFlowMeta/base_type = &"StoryMuted"
+StoryFlowMeta/fonts/font = SubResource("FontVariation_pchq8")
+StoryFlowStatus/base_type = &"StoryAccent"
+StoryFlowStatus/fonts/font = SubResource("FontVariation_pchq8")

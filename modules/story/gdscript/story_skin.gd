@@ -57,9 +57,13 @@ func rebuild() -> void:
 			_tint_box(state, type, "paper" if state == "normal" else "soft", "line")
 	_tint_box("focus", "LineEdit", "", "accent")
 	_tint_box("panel", "PopupMenu", "paper", "line")
-	for type in ["StorySheet", "StoryConfirmation", "StoryToast", "StoryDialogue"]:
+	for type in ["StorySheet", "StoryConfirmation", "StoryToast", "StoryDialogue", "StoryFlowFrame", "StoryFlowDetail", "StoryFlowZoom"]:
 		_tint_box("panel", type, "paper", "line")
 	_tint_box("panel", "StoryNameplate", "name", "")
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		_tint_box(state, "StoryFlowPrimary", "name", "")
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		theme.set_color(state, "StoryFlowPrimary", colors.name_ink)
 	for pair in [["StoryMuted", "muted"], ["StoryAccent", "accent"], ["StorySpeaker", "name_ink"]]:
 		theme.set_color("font_color", pair[0], colors[pair[1]])
 	theme.set_color("default_color", "RichTextLabel", colors.ink)

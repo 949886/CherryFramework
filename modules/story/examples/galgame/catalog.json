@@ -1,10 +1,52 @@
 {
-  "arrival": {"title":"黄昏的问候","chapter":"第一章 · 归来","summary":"推开熟悉的门，听见那句等待已久的欢迎回来。"},
-  "home": {"title":"此刻的选择","chapter":"第一章 · 归来","summary":"晚饭、热水，还有一场小小的玩笑。这个傍晚，要从哪里开始？"},
-  "dinner": {"title":"餐桌上的温度","chapter":"第二章 · 日常","summary":"简单的晚餐里，藏着认真准备的一整天。"},
-  "bath": {"title":"慢下来的时间","chapter":"第二章 · 日常","summary":"洗去一天的疲惫，给自己一点放松的时间。"},
-  "tease": {"title":"玩笑的回答","chapter":"第二章 · 日常","summary":"一句出乎意料的回答，让客厅里多了几分笑意。"},
-  "evening": {"title":"一起度过的夜晚","chapter":"第三章 · 余韵","summary":"不同的选择，在温暖的灯光下重新交汇。"},
-  "stars": {"title":"明天也会是晴天","chapter":"终章","summary":"并肩看着星星，把小小的约定留给明天。","ending":true},
-  "goodnight": {"title":"好梦，晚安","chapter":"终章","summary":"平凡的一天，就在温柔的晚安声里结束。","ending":true}
+  "arrival": {
+    "title": "黄昏的问候",
+    "chapter": "第一章 · 归来",
+    "summary": "推开熟悉的门，听见那句等待已久的欢迎回来。",
+    "lane": "序章"
+  },
+  "home": {
+    "title": "此刻的选择",
+    "chapter": "第一章 · 归来",
+    "summary": "晚饭、热水，还有一场小小的玩笑。这个傍晚，要从哪里开始？",
+    "lane": "共通篇"
+  },
+  "dinner": {
+    "title": "餐桌上的温度",
+    "chapter": "第二章 · 日常",
+    "summary": "简单的晚餐里，藏着认真准备的一整天。",
+    "lane": "选择的分岔"
+  },
+  "bath": {
+    "title": "慢下来的时间",
+    "chapter": "第二章 · 日常",
+    "summary": "洗去一天的疲惫，给自己一点放松的时间。",
+    "lane": "选择的分岔"
+  },
+  "tease": {
+    "title": "玩笑的回答",
+    "chapter": "第二章 · 日常",
+    "summary": "一句出乎意料的回答，让客厅里多了几分笑意。",
+    "lane": "选择的分岔"
+  },
+  "evening": {
+    "title": "一起度过的夜晚",
+    "chapter": "第三章 · 余韵",
+    "summary": "不同的选择，在温暖的灯光下重新交汇。",
+    "lane": "再次交汇"
+  },
+  "stars": {
+    "title": "明天也会是晴天",
+    "chapter": "终章",
+    "summary": "并肩看着星星，把小小的约定留给明天。",
+    "ending": true,
+    "lane": "终章"
+  },
+  "goodnight": {
+    "title": "好梦，晚安",
+    "chapter": "终章",
+    "summary": "平凡的一天，就在温柔的晚安声里结束。",
+    "ending": true,
+    "lane": "终章"
+  }
 }

@@ -10,6 +10,9 @@ const UI_SCRIPTS = [
 	preload("../gdscript/story_dialogue_box.gd"),
 	preload("../gdscript/story_choice_button.gd"),
 	preload("../gdscript/story_flow_view.gd"),
+	preload("../gdscript/story_flow_canvas.gd"),
+	preload("../gdscript/story_flow_card.gd"),
+	preload("../gdscript/story_flow_minimap.gd"),
 	preload("../gdscript/story_skin.gd"),
 	preload("../gdscript/story_preferences.gd"),
 ]

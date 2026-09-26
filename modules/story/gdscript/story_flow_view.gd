@@ -1,299 +1,301 @@
 class_name StoryFlowView
 extends VBoxContainer
-## One card per reachable script identity. Layout, edges and progress come from
-## the library/archive, never a hand-authored graph or a list of dialogue lines.
+## The .tscn owns fixed UI and the reusable card template. Runtime work binds
+## real script files, reading history and graph edges; no editor code executes.
 
-const CARD := Vector2(202, 112)
-const PITCH := Vector2(262, 158)
-const STATUS_LABELS := {"current": "当前", "read": "已读", "unread": "未读", "locked": "未解锁"}
+@export var node_scene: PackedScene
+@export var node_gap := Vector2(92, 60)
+@export var graph_margin := Vector2(34, 62)
+@onready var canvas: StoryFlowCanvas = %Canvas
+@onready var minimap: StoryFlowMinimap = %Minimap
+@onready var details: VBoxContainer = %Details
+@onready var search: LineEdit = %Search
+@onready var chapter: OptionButton = %Chapter
+@onready var zoom_label: Label = %ZoomLabel
+@onready var progress_label: Label = %ProgressLabel
 var presenter: StoryGalgamePresenter
 var menus: StoryGalgameMenus
 var skin: StorySkin
-var canvas: GraphCanvas
-var minimap: MiniMap
-var details: VBoxContainer
-var search: LineEdit
-var chapter: OptionButton
 var only_marks := false
 var selected := ""
 var cards: Dictionary = {}
 var positions: Dictionary = {}
-var zoom_label: Label
-var progress_label: Label
+var card_size := Vector2.ZERO
+var no_results := false
+var _lanes: Array[Label] = []
+var _ending_numbers: Dictionary = {}
+const STATUS_LABELS := {"current": "当前阅读", "read": "已读", "unread": "未读", "locked": "未解锁"}
 
 func configure(host: StoryGalgamePresenter, owner_menus: StoryGalgameMenus) -> void:
 	presenter = host
 	menus = owner_menus
 	skin = host.skin
-	add_theme_constant_override("separation", 14)
-	var toolbar := HBoxContainer.new()
-	toolbar.add_theme_constant_override("separation", 10)
-	add_child(toolbar)
-	search = LineEdit.new()
-	search.placeholder_text = "搜索已解锁的剧本…"
-	search.custom_minimum_size.x = 270
+	theme = skin.theme
+	canvas.view = self
+	minimap.view = self
 	search.text_changed.connect(func(_text): _filter())
-	toolbar.add_child(search)
-	chapter = OptionButton.new()
+	chapter.item_selected.connect(func(_index): _filter())
+	%Bookmarks.toggled.connect(func(value):
+		only_marks = value
+		%Bookmarks.icon = skin.icon("bookmark-filled" if value else "bookmark")
+		_filter())
+	%Locate.pressed.connect(_locate_current)
+	%ClearFilters.pressed.connect(_locate_current)
+	%ZoomOut.pressed.connect(func(): canvas.zoom_at(canvas.size / 2, canvas.zoom / 1.2))
+	%ZoomIn.pressed.connect(func(): canvas.zoom_at(canvas.size / 2, canvas.zoom * 1.2))
+	%Fit.pressed.connect(fit_graph)
+	%Bookmark.pressed.connect(func():
+		if not selected.is_empty() and status(selected) != "locked": presenter.archive.toggle_bookmark(selected))
+	%Replay.pressed.connect(_request_replay)
+	chapter.clear()
 	chapter.add_item("全部章节")
 	var chapters := {}
-	for node in host.library.nodes.values(): chapters[node.chapter] = true
-	for title in chapters: chapter.add_item(title)
-	chapter.item_selected.connect(func(_index): _filter())
-	toolbar.add_child(chapter)
-	var marked := skin.button("书签", func():
-		only_marks = not only_marks
-		_filter(), Vector2.ZERO, "bookmark")
-	marked.toggle_mode = true
-	marked.toggled.connect(func(active): marked.icon = skin.icon("bookmark-filled" if active else "bookmark"))
-	toolbar.add_child(marked)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	toolbar.add_child(spacer)
-	progress_label = skin.label("", 14, "muted")
-	toolbar.add_child(progress_label)
-	var split := HBoxContainer.new()
-	split.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	split.add_theme_constant_override("separation", 18)
-	add_child(split)
-	canvas = GraphCanvas.new()
-	canvas.view = self
-	canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	canvas.clip_contents = true
-	canvas.custom_minimum_size = Vector2(750, 350)
-	split.add_child(canvas)
-	var detail_scroll := ScrollContainer.new()
-	detail_scroll.custom_minimum_size.x = 328
-	detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	split.add_child(detail_scroll)
-	details = VBoxContainer.new()
-	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	details.add_theme_constant_override("separation", 14)
-	detail_scroll.add_child(details)
-	var footer := HBoxContainer.new()
-	footer.add_theme_constant_override("separation", 10)
-	add_child(footer)
-	var zoom_out := skin.button("", func(): canvas.zoom_at(canvas.size / 2, canvas.zoom / 1.2), Vector2(42, 34), "minus")
-	zoom_out.tooltip_text = "缩小画布"
-	footer.add_child(zoom_out)
-	zoom_label = skin.label("100%", 14, "muted")
-	footer.add_child(zoom_label)
-	var zoom_in := skin.button("", func(): canvas.zoom_at(canvas.size / 2, canvas.zoom * 1.2), Vector2(42, 34), "plus")
-	zoom_in.tooltip_text = "放大画布"
-	footer.add_child(zoom_in)
-	footer.add_child(skin.button("适应画布", fit_graph, Vector2.ZERO, "fit"))
-	footer.add_child(skin.button("定位当前", _locate_current, Vector2.ZERO, "locate"))
-	footer.add_child(skin.label("拖动画布 · 滚轮缩放", 13, "muted"))
-	for state in STATUS_LABELS:
-		footer.add_child(skin.icon_label(state, STATUS_LABELS[state], 13, "muted"))
-	for identity in host.library.nodes:
-		var node: Dictionary = host.library.nodes[identity]
-		positions[identity] = Vector2(node.column, node.row) * PITCH + Vector2(34, 34)
-		var button := skin.button("", func(): _select(identity))
-		button.size = CARD
-		button.clip_contents = true
-		button.clip_text = true
-		canvas.add_child(button)
-		cards[identity] = button
-	minimap = MiniMap.new()
-	minimap.view = self
-	minimap.custom_minimum_size = Vector2(186, 88)
-	minimap.size = Vector2(186, 88)
-	canvas.add_child(minimap)
-	canvas.resized.connect(func():
-		minimap.position = canvas.size - minimap.size - Vector2(12, 12))
-	_refresh()
-	_locate_current.call_deferred()
+	var columns := {}
+	for identity in presenter.library.nodes:
+		var data: Dictionary = presenter.library.nodes[identity]
+		chapters[data.chapter] = true
+		if not columns.has(data.column): columns[data.column] = []
+		columns[data.column].append(identity)
+		if data.ending: _ending_numbers[identity] = _ending_numbers.size() + 1
+		var card := node_scene.instantiate() as StoryFlowCard
+		canvas.world.add_child(card)
+		card_size = card.custom_minimum_size
+		card.size = card_size
+		card.pressed.connect(func():
+			if not canvas.suppress_click: _select(identity))
+		card.gui_input.connect(canvas.card_input.bind(card))
+		cards[identity] = card
+	for caption in chapters: chapter.add_item(caption)
+	# Center each rank against the largest branch. Linear passages, splits and
+	# joins share the same visual spine without hardcoding the demo's file IDs.
+	var max_rows := 1
+	for column in columns: max_rows = maxi(max_rows, columns[column].size())
+	for column in columns:
+		var identities: Array = columns[column]
+		for row in identities.size():
+			var identity: String = identities[row]
+			positions[identity] = graph_margin + Vector2(float(column) * (card_size.x + node_gap.x), (row + (max_rows - identities.size()) / 2.0) * (card_size.y + node_gap.y))
+			cards[identity].position = positions[identity]
+		var lane := skin.label(String(presenter.library.nodes[identities[0]].get("lane", presenter.library.nodes[identities[0]].chapter)), 14, "muted")
+		lane.position = Vector2(graph_margin.x + column * (card_size.x + node_gap.x), 24)
+		lane.theme_type_variation = "StoryFlowMeta"
+		lane.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		canvas.world.add_child(lane)
+		_lanes.append(lane)
+	presenter.archive.changed.connect(_archive_changed)
+	selected = _current_identity()
+	if not cards.has(selected) and not cards.is_empty(): selected = String(cards.keys()[0])
+	_filter(false)
+	fit_graph.call_deferred()
 
 func status(identity: String) -> String:
 	return presenter.archive.status(identity, presenter.library)
 
-func _refresh() -> void:
+func _current_identity() -> String:
+	if presenter.archive.player != null and presenter.archive.player.current_story != null:
+		return presenter.archive.player.current_story.get_identity()
+	return ""
+
+func display_title(identity: String) -> String:
+	if status(identity) != "locked": return String(presenter.library.nodes[identity].title)
+	return "未解锁结局 %02d" % _ending_numbers[identity] if _ending_numbers.has(identity) else "未解锁剧情"
+
+func _matches(identity: String) -> bool:
+	var data: Dictionary = presenter.library.nodes[identity]
+	var unlocked := status(identity) != "locked"
+	var query := search.text.strip_edges()
+	return (query.is_empty() or (unlocked and (String(data.title).containsn(query) or String(data.source).get_file().containsn(query)))) and (chapter.selected == 0 or data.chapter == chapter.get_item_text(chapter.selected)) and (not only_marks or presenter.archive.bookmarks.has(identity))
+
+func _filter(center_match := true) -> void:
+	var matches: Array[String] = []
+	for identity in cards:
+		var matches_filter := _matches(identity)
+		cards[identity].set_match(matches_filter)
+		if matches_filter: matches.append(identity)
+	no_results = matches.is_empty()
+	canvas.world.visible = not no_results
+	%Empty.visible = no_results
+	%EmptyText.text = "没有可显示的剧本" if cards.is_empty() else "没有匹配的剧本"
+	%ZoomPanel.visible = not no_results
+	minimap.visible = not no_results
+	%DetailEmpty.visible = no_results
+	%DetailContent.visible = not no_results
+	if not no_results and not matches.has(selected): selected = matches[0]
 	var visited := 0
 	for identity in cards:
-		var state := status(identity)
-		var node: Dictionary = presenter.library.nodes[identity]
-		var button: Button = cards[identity]
-		var unlocked := state != "locked"
-		button.icon = skin.icon(state)
-		button.text = "%s\n\n%s" % [node.title if unlocked else "尚未解锁", node.source.get_file() if unlocked else "继续故事，发现新的可能"]
-		var mark := button.get_node_or_null("Bookmark") as TextureRect
-		if mark == null:
-			mark = skin.icon_view("bookmark-filled", 12, "accent")
-			mark.name = "Bookmark"
-			mark.position = Vector2(CARD.x - 22, 8)
-			button.add_child(mark)
-		mark.visible = presenter.archive.bookmarks.has(identity)
-		button.add_theme_font_size_override("font_size", 14)
-		button.add_theme_stylebox_override("normal", StorySkin.box(skin.colors.soft if state == "current" else skin.colors.paper, skin.colors.accent if identity == selected else skin.colors.line, 12, 14))
 		if presenter.archive.progress.has(identity): visited += 1
-	progress_label.text = "已探索 %d / %d 份剧本" % [visited, cards.size()]
+	var filtered := not search.text.strip_edges().is_empty() or chapter.selected != 0 or only_marks
+	progress_label.text = "%d / %d 份剧本" % [matches.size(), cards.size()] if filtered else "已读 %d / %d 份剧本" % [visited, cards.size()]
+	_refresh()
+	if not no_results:
+		_show_details()
+		if center_match: canvas.center_on(selected)
+
+func _refresh() -> void:
+	for identity in cards:
+		var data: Dictionary = presenter.library.nodes[identity]
+		var state := status(identity)
+		cards[identity].bind_data(skin, {"state": state, "selected": identity == selected,
+			"title": display_title(identity), "file": "剧情尚未揭晓" if state == "locked" else data.source.get_file(),
+			"status_label": STATUS_LABELS[state], "bookmarked": presenter.archive.bookmarks.has(identity) and state != "locked"})
 	canvas.refresh()
 
-func _filter() -> void:
-	for identity in cards:
-		var node: Dictionary = presenter.library.nodes[identity]
-		var unlocked := status(identity) != "locked"
-		var matches_search := search.text.is_empty() or (unlocked and (String(node.title).containsn(search.text) or String(node.source).get_file().containsn(search.text)))
-		var matches_chapter: bool = chapter.selected == 0 or (unlocked and node.chapter == chapter.get_item_text(chapter.selected))
-		cards[identity].visible = matches_search and matches_chapter and (not only_marks or presenter.archive.bookmarks.has(identity))
-	canvas.refresh()
+func update_skin() -> void:
+	if presenter == null: return
+	skin = presenter.skin
+	theme = skin.theme
+	skin.refresh_labels(self)
+	_refresh()
+	if not no_results: _show_details()
+
+func _archive_changed() -> void:
+	_filter(false)
 
 func _select(identity: String) -> void:
+	if not cards.has(identity): return
 	selected = identity
-	for child in details.get_children():
-		details.remove_child(child)
-		child.queue_free()
-	var node: Dictionary = presenter.library.nodes[identity]
-	var state := status(identity)
-	if state == "locked":
-		details.add_child(skin.icon_label("locked", "尚未解锁", 22))
-		details.add_child(_wrapped("沿着故事继续前进，新的片段会在这里慢慢展开。", 16))
-	else:
-		details.add_child(skin.label(node.chapter, 13, "accent"))
-		details.add_child(_wrapped(node.title, 24))
-		var image := TextureRect.new()
-		image.texture = presenter.backdrop
-		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		image.custom_minimum_size = Vector2(300, 126)
-		image.clip_contents = true
-		details.add_child(image)
-		var snapshot: Dictionary = presenter.archive.progress.get(identity, {}).get("entry", {})
-		var visual: Dictionary = snapshot.get("presentation", {})
-		var portrait_path := String(visual.get("portrait_path", ""))
-		if not portrait_path.is_empty() and ResourceLoader.exists(portrait_path):
-			var portrait := presenter._texture(image, load(portrait_path) as Texture2D, Rect2(0, 4, 156, 265))
-			portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		details.add_child(_wrapped(node.summary, 16))
-		details.add_child(_wrapped(node.source.get_file(), 13))
-		var read_count := int(presenter.archive.progress.get(identity, {}).get("read", {}).size())
-		details.add_child(skin.label("已读 %d / %d 个片段" % [read_count, node.total], 14, "muted"))
-		var bar := ProgressBar.new()
-		bar.max_value = maxi(1, node.total)
-		bar.value = read_count
-		bar.custom_minimum_size.y = 8
-		bar.show_percentage = false
-		details.add_child(bar)
-		details.add_child(skin.button("移除书签" if presenter.archive.bookmarks.has(identity) else "添加书签", func():
-			presenter.archive.toggle_bookmark(identity)
-			_select(identity)
-			_filter(), Vector2.ZERO, "bookmark-filled" if presenter.archive.bookmarks.has(identity) else "bookmark"))
-		var replay := skin.button("从这份剧本重新阅读", func():
-			menus.confirm("回到这份剧本？", "将回到首次进入该文件时的状态。当前未保存的进度将丢失。", func():
-				if presenter.archive.replay_file(identity) == OK: presenter.close_menu()), Vector2.ZERO, "restart")
-		replay.disabled = not presenter.archive.progress.has(identity)
-		details.add_child(replay)
-		for direction in ["from", "to"]:
-			var peers := VBoxContainer.new()
-			peers.add_child(skin.label("后续故事" if direction == "from" else "来自", 14, "muted"))
-			for edge in presenter.library.edges:
-				if edge[direction] != identity: continue
-				var peer: String = edge.to if direction == "from" else edge.from
-				var peer_node: Dictionary = presenter.library.nodes.get(peer, {})
-				if peer_node.is_empty(): continue
-				peers.add_child(skin.button("尚未解锁" if status(peer) == "locked" else peer_node.title, func():
-					_select(peer)
-					canvas.center_on(peer), Vector2.ZERO, "locked" if status(peer) == "locked" else "chevron-right"))
-			if peers.get_child_count() > 1: details.add_child(peers)
-			else: peers.free()
+	%DetailScroll.scroll_vertical = 0
 	_refresh()
+	_show_details()
 
-func _wrapped(text: String, font_size: int) -> Label:
-	var label := skin.label(text, font_size)
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	return label
+func _show_details() -> void:
+	if not presenter.library.nodes.has(selected): return
+	var data: Dictionary = presenter.library.nodes[selected]
+	var state := status(selected)
+	var locked := state == "locked"
+	var record: Dictionary = presenter.archive.progress.get(selected, {})
+	var read_count := 0
+	for key in data.reading_keys:
+		if record.get("read", {}).get(key, false): read_count += 1
+	%DetailStatus.text = STATUS_LABELS[state] + (" · 结局" if data.ending else "")
+	%Bookmark.disabled = locked
+	%Bookmark.set_pressed_no_signal(presenter.archive.bookmarks.has(selected) and not locked)
+	%Bookmark.icon = skin.icon("bookmark-filled" if %Bookmark.button_pressed else "bookmark")
+	%Bookmark.tooltip_text = "尚未解锁" if locked else ("移除剧本书签" if %Bookmark.button_pressed else "添加剧本书签")
+	%DetailTitle.text = display_title(selected)
+	%DetailFile.text = "剧本文件 · 未解锁" if locked else data.source.get_file()
+	%DetailSummary.text = "继续探索故事后，这里的标题、剧本与内容将逐渐揭晓。" if locked else data.summary
+	%ReadingProgress.visible = not locked
+	%ReadProgress.max_value = maxi(1, data.total)
+	%ReadProgress.value = read_count
+	%ReadCount.text = "%d%% · %d/%d" % [roundi(100.0 * read_count / maxi(1, data.total)), read_count, data.total]
+	_bind_preview(locked, record)
+	_build_connections(locked)
+	var visited := presenter.archive.progress.has(selected)
+	%Replay.disabled = locked or (not visited and state != "current")
+	%Replay.icon = skin.icon("play" if state == "current" else "restart")
+	%Replay.text = "继续阅读" if state == "current" else ("尚未解锁" if locked else ("从此剧本重读" if visited else "阅读后可重访"))
+	%ReplayNote.text = "回到当前对白" if state == "current" else ("从文件开头重读，保留已读记录与存档" if visited else "通过剧情中的选择到达此处")
+
+func _bind_preview(locked: bool, record: Dictionary) -> void:
+	%PreviewLock.visible = locked
+	# Rasterize the SVG at its authored logical size instead of stretching the
+	# smaller toolbar icon; DPITexture still handles viewport oversampling.
+	%PreviewLock.texture = skin.icon("locked", roundi(%PreviewLock.size.x))
+	%PreviewBackground.visible = not locked
+	%PreviewPortrait.visible = false
+	# Locked nodes never load or expose the asset paths in their snapshots.
+	if locked:
+		%PreviewBackground.texture = null
+		%PreviewPortrait.texture = null
+		return
+	var visual: Dictionary = record.get("entry", {}).get("presentation", {})
+	%PreviewBackground.texture = presenter.backdrop
+	if status(selected) == "current":
+		# Use the actual scene layers, not a viewport thumbnail which may have
+		# been captured while another menu was still visible during navigation.
+		%PreviewBackground.texture = presenter.background.texture
+		%PreviewPortrait.texture = presenter.portrait.texture
+		%PreviewPortrait.visible = presenter.portrait.visible and presenter.portrait.texture != null
+		return
+	var background_path := String(visual.get("background_path", ""))
+	if not background_path.is_empty() and ResourceLoader.exists(background_path): %PreviewBackground.texture = load(background_path) as Texture2D
+	var portrait_path := String(visual.get("portrait_path", ""))
+	if not portrait_path.is_empty() and ResourceLoader.exists(portrait_path):
+		%PreviewPortrait.texture = load(portrait_path) as Texture2D
+		%PreviewPortrait.visible = true
+
+func _build_connections(locked: bool) -> void:
+	for child in %Connections.get_children():
+		%Connections.remove_child(child)
+		child.queue_free()
+	for direction in ["to", "from"]:
+		var edges: Array[Dictionary] = []
+		for edge in presenter.library.edges:
+			if edge[direction] == selected: edges.append(edge)
+		if edges.is_empty():
+			if direction == "from": %Connections.add_child(skin.label("故事在此暂告一段落", 12, "muted"))
+			continue
+		%Connections.add_child(skin.label("从这里而来" if direction == "to" else "故事的去向", 12, "muted"))
+		for edge in edges:
+			var peer: String = edge.from if direction == "to" else edge.to
+			var link := skin.button("", func():
+				_select(peer)
+				canvas.center_on(peer), Vector2(0, 56))
+			link.flat = true
+			link.set_meta("peer", peer)
+			%Connections.add_child(link)
+			var layout := VBoxContainer.new()
+			layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			layout.offset_left = 8
+			layout.offset_right = -8
+			layout.offset_top = 6
+			layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			link.add_child(layout)
+			for pair in [[display_title(peer), "ink", 14], ["条件尚未揭晓" if locked or status(peer) == "locked" else String(edge.label), "muted", 12]]:
+				var label := skin.label(pair[0], pair[2], pair[1])
+				label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+				label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				layout.add_child(label)
+			link.tooltip_text = display_title(peer) + "\n" + layout.get_child(1).text
+
+func _request_replay() -> void:
+	if selected.is_empty() or status(selected) == "locked": return
+	if selected == _current_identity():
+		presenter.close_menu()
+		return
+	if not presenter.archive.progress.has(selected): return
+	var target := selected
+	menus.confirm("重读「%s」？" % display_title(target), "当前阅读位置将切换到这份剧本的开头。已有存档、书签和已读记录会保留。", func():
+		if presenter.archive.replay_file(target) == OK: presenter.close_menu())
 
 func _locate_current() -> void:
-	if presenter.archive.player == null or presenter.archive.player.current_story == null: return
-	var identity := presenter.archive.player.current_story.get_identity()
-	if cards.has(identity):
-		_select(identity)
-		canvas.center_on(identity)
+	search.text = ""
+	chapter.select(0)
+	only_marks = false
+	%Bookmarks.set_pressed_no_signal(false)
+	%Bookmarks.icon = skin.icon("bookmark")
+	var identity := _current_identity()
+	if cards.has(identity): selected = identity
+	_filter(false)
+	if cards.has(selected): canvas.center_on(selected)
 
 func graph_bounds() -> Rect2:
-	var bounds := Rect2(Vector2.ZERO, CARD)
-	for identity in positions:
-		if cards[identity].visible: bounds = bounds.merge(Rect2(positions[identity], CARD))
-	return bounds.grow(24)
+	if positions.is_empty(): return Rect2(Vector2.ZERO, Vector2(202, 126))
+	var bounds := Rect2(positions.values()[0], card_size)
+	for position in positions.values(): bounds = bounds.merge(Rect2(position, card_size))
+	return bounds.grow_individual(34, 44, 34, 34)
 
 func fit_graph() -> void:
+	if positions.is_empty(): return
 	var bounds := graph_bounds()
-	canvas.zoom = clampf(minf(canvas.size.x / bounds.size.x, canvas.size.y / bounds.size.y), 0.25, 1.5)
-	canvas.pan = canvas.size / 2 - bounds.get_center() * canvas.zoom
+	canvas.zoom = clampf(minf((canvas.size.x - 28) / bounds.size.x, (canvas.size.y - 110) / bounds.size.y), canvas.min_zoom, 1.0)
+	canvas.pan = Vector2(canvas.size.x / 2, (canvas.size.y + 12) / 2) - bounds.get_center() * canvas.zoom
 	canvas.refresh()
+	for lane in _lanes: lane.add_theme_font_size_override("font_size", maxi(14, roundi(10.0 / canvas.zoom)))
 
-class GraphCanvas extends Control:
-	var view: StoryFlowView
-	var pan := Vector2(24, 24)
-	var zoom := 1.0
-	var dragging := false
+func _input(event: InputEvent) -> void:
+	# Follow explicit keyboard traversal, not focus restoration when Cherry
+	# uncovers this route after a confirmation. Restoration preserves the pan.
+	if event is InputEventKey and event.is_pressed() and is_visible_in_tree():
+		for action in ["ui_focus_next", "ui_focus_prev", "ui_left", "ui_right", "ui_up", "ui_down"]:
+			if event.is_action(action):
+				_reveal_keyboard_focus.call_deferred()
+				break
 
-	func refresh() -> void:
-		for identity in view.cards:
-			var card: Button = view.cards[identity]
-			card.position = pan + view.positions[identity] * zoom
-			card.scale = Vector2.ONE * zoom
-		view.zoom_label.text = "%d%%" % roundi(zoom * 100)
-		queue_redraw()
-		if is_instance_valid(view.minimap): view.minimap.queue_redraw()
-
-	func center_on(identity: String) -> void:
-		pan = size / 2 - (view.positions[identity] + CARD / 2) * zoom
-		refresh()
-
-	func zoom_at(point: Vector2, next: float) -> void:
-		next = clampf(next, 0.25, 1.75)
-		pan = point - (point - pan) * next / zoom
-		zoom = next
-		refresh()
-
-	func _gui_input(event: InputEvent) -> void:
-		if event is InputEventMouseButton:
-			if event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_MIDDLE]: dragging = event.pressed
-			if event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
-				zoom_at(event.position, zoom * (1.15 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.15))
-			accept_event()
-		elif event is InputEventMouseMotion and dragging:
-			pan += event.relative
-			refresh()
-			accept_event()
-
-	func _draw() -> void:
-		draw_style_box(StorySkin.box(view.skin.colors.soft, view.skin.colors.line, 14), Rect2(Vector2.ZERO, size))
-		for x in range(0, int(size.x), 24):
-			for y in range(0, int(size.y), 24): draw_circle(Vector2(x, y), 0.8, view.skin.colors.line)
-		for edge in view.presenter.library.edges:
-			if not view.cards.has(edge.from) or not view.cards.has(edge.to): continue
-			if not view.cards[edge.from].visible or not view.cards[edge.to].visible: continue
-			var start: Vector2 = pan + (view.positions[edge.from] + Vector2(CARD.x, CARD.y / 2)) * zoom
-			var end: Vector2 = pan + (view.positions[edge.to] + Vector2(0, CARD.y / 2)) * zoom
-			var points := PackedVector2Array()
-			for step in range(33):
-				var t := float(step) / 32
-				points.append(start.bezier_interpolate(start + Vector2(48, 0) * zoom, end - Vector2(48, 0) * zoom, end, t))
-			draw_polyline(points, view.skin.colors.accent if view.status(edge.to) in ["read", "current"] else view.skin.colors.muted, 1.6, true)
-			draw_circle(end, 3, view.skin.colors.accent)
-
-class MiniMap extends Control:
-	var view: StoryFlowView
-
-	func _draw() -> void:
-		draw_style_box(StorySkin.box(view.skin.colors.paper, view.skin.colors.line, 8), Rect2(Vector2.ZERO, size))
-		var bounds := view.graph_bounds()
-		var factor := minf((size.x - 16) / bounds.size.x, (size.y - 16) / bounds.size.y)
-		for identity in view.positions:
-			if view.cards[identity].visible:
-				draw_rect(Rect2((view.positions[identity] - bounds.position) * factor + Vector2(8, 8), CARD * factor), view.skin.colors.accent if identity == view.selected else view.skin.colors.line)
-		var visible_bounds := Rect2(-view.canvas.pan / view.canvas.zoom, view.canvas.size / view.canvas.zoom)
-		var rect := Rect2((visible_bounds.position - bounds.position) * factor + Vector2(8, 8), visible_bounds.size * factor).intersection(Rect2(Vector2.ZERO, size))
-		draw_rect(rect, view.skin.colors.accent, false, 1)
-
-	func _gui_input(event: InputEvent) -> void:
-		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			var bounds := view.graph_bounds()
-			var factor := minf((size.x - 16) / bounds.size.x, (size.y - 16) / bounds.size.y)
-			var point: Vector2 = (event.position - Vector2(8, 8)) / factor + bounds.position
-			view.canvas.pan = view.canvas.size / 2 - point * view.canvas.zoom
-			view.canvas.refresh()
-			accept_event()
+func _reveal_keyboard_focus() -> void:
+	var focused := get_viewport().gui_get_focus_owner()
+	for identity in cards:
+		if cards[identity] == focused:
+			canvas.center_on(identity)
+			return

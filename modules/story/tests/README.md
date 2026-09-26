@@ -41,6 +41,8 @@ python addons/cherry/modules/story/tests/run_tests.py --godot "C:/path/to/godot_
 
 测试使用真实引擎和编辑器组件。资源槽检查通过原生 `EditorResourcePicker` 赋值及 `PackedScene` 保存/重载完成，不模拟鼠标拖动手势。界面布局和颜色的人工观感仍需在可见编辑器中确认。
 
+`galgame_flow_test.gd` 覆盖真实脚本选项标题、筛选上下文、书签、锁定内容隐藏、阅读进度、原生卡片拖动与点击、滚轮缩放、小地图定位、Cherry 确认与返回位置、配色更新和继续阅读；`-- --render` 输出各状态截图。
+
 ## 隔离和结果
 
 每次运行在系统临时目录创建 `cherry-story-tests-*`。Story 复制到 `features/narrative`、核心模块复制到 `shared/cherry_core`，验证脚本不依赖默认安装目录。复制时只更新 `.tscn` / `.tres` 的序列化路径提示，保留相对引用和 UID。

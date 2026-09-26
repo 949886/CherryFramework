@@ -1,0 +1,84 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="../../gdscript/story_flow_card.gd" id="script"]
+[ext_resource type="Theme" path="../../resources/galgame_theme.tres" id="theme"]
+[ext_resource type="Texture2D" path="../../icons/galgame/bookmark-filled.svg" id="bookmark-filled"]
+[ext_resource type="Texture2D" path="../../icons/galgame/unread.svg" id="unread"]
+
+
+[node name="FlowCard" type="Button"]
+script = ExtResource("script")
+theme = ExtResource("theme")
+custom_minimum_size = Vector2(202, 126)
+offset_right = 202.0
+offset_bottom = 126.0
+mouse_default_cursor_shape = 2
+theme_type_variation = "StoryFlowCard"
+
+[node name="Margin" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 13.0
+offset_right = -16.0
+offset_bottom = -13.0
+mouse_filter = 2
+
+[node name="Content" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 9
+
+[node name="Top" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="StateIcon" type="TextureRect" parent="Margin/Content/Top"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(14, 14)
+size_flags_vertical = 4
+texture = ExtResource("unread")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="Status" type="Label" parent="Margin/Content/Top"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "未读"
+theme_override_font_sizes/font_size = 13
+theme_type_variation = "StoryFlowStatus"
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="BookmarkMark" type="TextureRect" parent="Margin/Content/Top"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(13, 13)
+size_flags_vertical = 4
+texture = ExtResource("bookmark-filled")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "剧本标题"
+theme_override_font_sizes/font_size = 19
+mouse_filter = 2
+text_overrun_behavior = 3
+
+[node name="File" type="Label" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "story.md"
+theme_override_font_sizes/font_size = 12
+theme_type_variation = "StoryFlowMeta"
+mouse_filter = 2
+text_overrun_behavior = 3

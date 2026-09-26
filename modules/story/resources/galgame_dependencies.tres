@@ -11,8 +11,12 @@
 [ext_resource type="Resource" path="galgame_icons.tres" id="icons"]
 [ext_resource type="Resource" path="galgame_pages.tres" id="pages"]
 [ext_resource type="Resource" path="galgame_navigation_dependencies.tres" id="navigator"]
+[ext_resource type="Script" path="../gdscript/story_flow_canvas.gd" id="story_flow_canvas"]
+[ext_resource type="Script" path="../gdscript/story_flow_card.gd" id="story_flow_card"]
+[ext_resource type="Script" path="../gdscript/story_flow_minimap.gd" id="story_flow_minimap"]
+
 [resource]
-metadata/scripts = [ExtResource("1"), ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8")]
+metadata/scripts = [ExtResource("1"), ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("story_flow_canvas"), ExtResource("story_flow_card"), ExtResource("story_flow_minimap")]
 metadata/glass_shader = ExtResource("glass")
 metadata/icons = ExtResource("icons")
 metadata/pages = ExtResource("pages")
