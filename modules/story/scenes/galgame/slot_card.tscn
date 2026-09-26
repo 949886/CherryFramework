@@ -25,7 +25,7 @@ mouse_filter = 2
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 13
-metadata/palette_color = "accent"
+theme_type_variation = "StoryAccent"
 
 [node name="Image" type="TextureRect" parent="Content"]
 layout_mode = 2
@@ -39,11 +39,10 @@ stretch_mode = 6
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 16
-metadata/palette_color = "ink"
 text_overrun_behavior = 3
 
 [node name="Stamp" type="Label" parent="Content"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 12
-metadata/palette_color = "muted"
+theme_type_variation = "StoryMuted"

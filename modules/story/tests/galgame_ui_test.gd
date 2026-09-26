@@ -125,11 +125,30 @@ func _run() -> void:
 	var snapshot := presenter.archive.player.create_snapshot()
 	check(presenter.archive.save_slot(0, presenter.thumbnail) == OK, "save current choice with thumbnail")
 	check(presenter.archive.read_slot(0).snapshot.presentation.mode == "choice", "save captures genuine choice phase")
+	presenter.preferences.set_value("palette", "mint")
 	presenter.open_menu("save")
+	var save_page := presenter.menu.active_page
+	_check_slot_palette(save_page)
 	await capture("galgame-save")
 	check(presenter.menu.active_page.heading.text == "存档", "separate save heading")
 	presenter.menu.open("load")
 	check(presenter.menu.active_page.heading.text == "读档", "separate load heading")
+	var load_page := presenter.menu.active_page
+	var first_card: Button = load_page._slot_cards[0].button
+	check(not first_card.disabled and load_page._slot_cards[1].button.disabled, "load page includes occupied and disabled empty slots")
+	for palette in ["night", "peach"]:
+		presenter.preferences.set_value("palette", palette)
+		_check_slot_palette(save_page) # Covered pages must also update.
+		_check_slot_palette(load_page)
+		load_page.select_slot_page(1)
+		_check_slot_palette(load_page)
+		load_page.select_slot_page(0)
+	check(load_page._slot_cards[0].button == first_card, "palette changes and pagination retain slot card instances")
+	# Off-tree controls have no theme owner yet; inspect the authored resource.
+	var template: Button = load_page.slot_card_scene.instantiate()
+	check(template.theme.get_stylebox("normal", "Button").bg_color.is_equal_approx(Color(presenter.preferences.schema.palettes.peach.paper)), "runtime palettes never mutate the standalone card theme")
+	check(template.theme.get_color("font_color", template.get_node("Content/Title").theme_type_variation).is_equal_approx(Color(presenter.preferences.schema.palettes.peach.accent)), "standalone card title uses the shared accent style")
+	template.free()
 	presenter.menu.open("flow")
 	await settle()
 	var flow := presenter.menu.active_page.body.get_child(0) as StoryFlowView
@@ -192,3 +211,20 @@ func _run() -> void:
 	await settle()
 	print("Galgame UI: %d passed, %d failed" % [checks - failures, failures])
 	quit(1 if failures else 0)
+
+func _check_slot_palette(page: StoryMenuPage) -> void:
+	# Query the actual native styles on every occupied/empty card. Checking the
+	# parent theme alone misses child scenes that shadow it with a fixed theme.
+	for state in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+		var matches := true
+		var fill: Color = presenter.skin.colors.paper if state == "normal" else presenter.skin.colors.soft
+		for card in page._slot_cards:
+			var style := card.button.get_theme_stylebox(state) as StyleBoxFlat
+			matches = matches and style.bg_color == fill and style.border_color == presenter.skin.colors.line
+		check(matches, "%s slot %s style follows palette %s" % [page.page, state, presenter.preferences.values.palette])
+	var labels_match := true
+	for card in page._slot_cards:
+		labels_match = labels_match and card.title.get_theme_color("font_color") == presenter.skin.colors.accent
+		labels_match = labels_match and card.text.get_theme_color("font_color") == presenter.skin.colors.ink
+		labels_match = labels_match and card.stamp.get_theme_color("font_color") == presenter.skin.colors.muted
+	check(labels_match, page.page + " slot labels follow the live palette")

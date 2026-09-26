@@ -255,6 +255,10 @@ func _slots() -> void:
 	# One scene per reusable card; only slot data and page count are dynamic.
 	for index in int(presenter.preferences.schema.slots_per_page):
 		var button := slot_card_scene.instantiate() as Button
+		# The standalone template carries an editor theme. Once mounted, inherit
+		# the page's live theme so every button state follows palette changes,
+		# including while this page is covered. Local style overrides stay intact.
+		button.theme = null
 		button.pressed.connect(func(): _slot_action(int(button.get_meta("slot_index"))))
 		grid.add_child(button)
 		_slot_cards.append({"button": button, "title": button.get_node("Content/Title"),
