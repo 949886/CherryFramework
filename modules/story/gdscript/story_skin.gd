@@ -69,6 +69,16 @@ func rebuild() -> void:
 	for key in ["grabber", "grabber_highlight"]:
 		var grabber := DPITexture.create_from_string('<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="7" fill="#%s" stroke="#%s" stroke-width="2"/></svg>' % [colors.paper.to_html(false), colors.accent.to_html(false)])
 		theme.set_icon(key, "HSlider", grabber)
+	# Scrollbars share the UI palette. State opacity, capsule geometry and
+	# minimum thumb length belong to the authored Theme, not runtime code.
+	for type in ["HScrollBar", "VScrollBar"]:
+		for state in ["scroll", "grabber", "grabber_highlight", "grabber_pressed", "scroll_focus"]:
+			var style := theme.get_stylebox(state, type) as StyleBoxFlat
+			var fill_alpha := style.bg_color.a
+			var border_alpha := style.border_color.a
+			_tint_box(state, type, "soft" if state == "scroll" else "accent", "accent")
+			style.bg_color.a = fill_alpha
+			style.border_color.a = border_alpha
 	_tint_box("background", "ProgressBar", "line", "")
 	_tint_box("fill", "ProgressBar", "accent", "")
 	(theme.get_stylebox("separator", "HSeparator") as StyleBoxLine).color = colors.line

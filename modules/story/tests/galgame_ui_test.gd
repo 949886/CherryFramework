@@ -91,6 +91,7 @@ func _run() -> void:
 	check(presenter.menu.active_page.preview.size == presenter.dialogue.size, "preview tracks large text panel geometry")
 	presenter.preferences.set_value("font_size", 23)
 	presenter.preferences.set_value("line_height", 1.5)
+	_check_scrollbar_palette()
 	await capture("galgame-settings-text")
 	presenter.menu.section_id = "display"
 	presenter.menu.open("settings")
@@ -103,7 +104,11 @@ func _run() -> void:
 	check(presenter.footer_buttons.save.get_theme_color("icon_normal_color") == presenter.skin.colors.ink, "SVG buttons follow palette changes")
 	check(presenter.dialogue.voice_icon.self_modulate == presenter.skin.colors.accent, "voice SVG follows palette changes")
 	check(presenter.menu.active_page.preview.text.get_theme_color("default_color") == presenter.dialogue.text.get_theme_color("default_color"), "palette propagates to both dialogue instances")
+	_check_scrollbar_palette()
 	await capture("galgame-settings-mint")
+	presenter.preferences.set_value("palette", "night")
+	_check_scrollbar_palette()
+	await capture("galgame-settings-night")
 	presenter.preferences.set_value("palette", "peach")
 	presenter.preferences.set_value("master", 67)
 	presenter.preferences.set_value("voice", 45)
@@ -228,3 +233,24 @@ func _check_slot_palette(page: StoryMenuPage) -> void:
 		labels_match = labels_match and card.text.get_theme_color("font_color") == presenter.skin.colors.ink
 		labels_match = labels_match and card.stamp.get_theme_color("font_color") == presenter.skin.colors.muted
 	check(labels_match, page.page + " slot labels follow the live palette")
+
+func _check_scrollbar_palette() -> void:
+	var page := presenter.menu.active_page
+	var scroll := page.settings_tabs.get_current_tab_control() as ScrollContainer
+	# Inspect the real native controls, including the normally hidden horizontal
+	# bar. This catches a child theme masking the page's current palette.
+	for bar in [scroll.get_v_scroll_bar(), scroll.get_h_scroll_bar()]:
+		var track := bar.get_theme_stylebox("scroll") as StyleBoxFlat
+		var normal := bar.get_theme_stylebox("grabber") as StyleBoxFlat
+		var hover := bar.get_theme_stylebox("grabber_highlight") as StyleBoxFlat
+		var pressed := bar.get_theme_stylebox("grabber_pressed") as StyleBoxFlat
+		var focus := bar.get_theme_stylebox("scroll_focus") as StyleBoxFlat
+		check(track.bg_color.is_equal_approx(presenter.skin.colors.soft), "scrollbar track follows the active palette")
+		check(Color(normal.bg_color, 1).is_equal_approx(presenter.skin.colors.accent) and pressed.bg_color.is_equal_approx(presenter.skin.colors.accent), "scrollbar thumb follows the active accent")
+		check(normal.bg_color.a < hover.bg_color.a and hover.bg_color.a < pressed.bg_color.a, "scrollbar interaction states remain distinct")
+		check(Color(focus.border_color, 1).is_equal_approx(presenter.skin.colors.accent) and not focus.draw_center, "keyboard focus uses a subtle theme-colored outline")
+		check(normal.get_minimum_size() == hover.get_minimum_size() and normal.get_minimum_size() == pressed.get_minimum_size(), "scrollbar state changes preserve hit area and layout")
+	var previous := scroll.scroll_vertical
+	scroll.scroll_vertical = 80
+	check(scroll.scroll_vertical > 0, "themed settings scrollbar still scrolls overflowing content")
+	scroll.scroll_vertical = previous
